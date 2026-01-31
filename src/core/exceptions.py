@@ -1,0 +1,2 @@
+class VelvetException(Exception):
+    pass
