@@ -2,7 +2,7 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
+class PostgresSettings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
     POSTGRES_USER: str
@@ -20,4 +20,4 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf8", extra="ignore")
 
 
-db_settings = Settings()  # type: ignore reportCallIssue
+postgres_settings = PostgresSettings()  # type: ignore reportCallIssue
