@@ -1,5 +1,43 @@
 [tool.ruff]
 line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint]
+select = [
+    "E",      # Ошибки стиля (pycodestyle)
+    "W",      # Предупреждения стиля (pycodestyle)
+    "F",      # Ошибки логики (Pyflakes)
+    "I",      # Автоматическая сортировка импортов (isort)
+    "UP",     # Обновление синтаксиса до новых версий Python
+    "B",      # Нахождение вероятных багов (flake8-bugbear)
+    "PT",     # Оптимизация тестов Pytest
+    "ARG",    # Поиск неиспользуемых аргументов функций
+    "D", # Включаем проверку документации (pydocstyle)
+    "D213", # Явно приказываем: текст СО ВТОРОЙ строки
+]
+
+ignore = [
+    "D101", # Отсутствует строка документации в публичном классе
+    "D102", # Отсутствует строка документации в публичном методе
+    "D107", # Отсутствует строка документации в __init__
+    "D105", # Отсутствует строка документации в магическом методе
+    "D212", # "Многострочная документация должно начинаться с первой строки" (выключаем это)
+    "D203", # "Перед строкой документации класса требуется 1 пустая строка" (выключаем лишнее)
+    "D100", # Нет докстрига в начале файла (обычно не нужен)
+]
+extend-unsafe-fixes = ["D201", "D205", "D209", "D213", "D415", "D400", "D416"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false # Важно: Ruff будет сохранять ваши запятые для переносов
+docstring-code-format = true      # Форматирует примеры кода в докстрингах
 
 [tool.poetry]
 name = "velvet-v2"
@@ -9,7 +47,7 @@ authors = ["boradydev"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.14"
+python = "^3.13"
 alembic = "^1.18.3"
 pydantic-settings = "^2.12.0"
 ruff = "^0.14.14"
