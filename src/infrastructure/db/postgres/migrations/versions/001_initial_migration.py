@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 
-from migrations.utils import sql
+from src.infrastructure.db.postgres.migrations.utils import sql
 
 # revision identifiers, used by Alembic.
 revision: str = '648d45859b4d'
