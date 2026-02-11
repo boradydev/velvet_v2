@@ -1,5 +1,5 @@
 [tool.ruff]
-line-length = 100
+line-length = 88
 target-version = "py313"
 
 [tool.ruff.lint.pydocstyle]
@@ -20,15 +20,15 @@ select = [
 ]
 
 ignore = [
-    "D100", # Нет докстрига в начале файла
-    "D101", # Отсутствует строка документации в публичном классе
-    "D102", # Отсутствует строка документации в публичном методе
-    "D103", # Отсутствует строка документации в публичной функции
-    "D105", # Отсутствует строка документации в магическом методе
-    "D107", # Отсутствует строка документации в __init__
-    "D200", # Не схлопывать документацию в одну строку
-    "D203", # "Перед строкой документации класса требуется 1 пустая строка" (выключаем лишнее)
-    "D212", # "Многострочная документация должно начинаться с первой строки" (выключаем это)
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D105",
+    "D107",
+#    "D200",
+    "D203",
+    "D212",
 ]
 extend-unsafe-fixes = [
     "D201",
@@ -43,6 +43,7 @@ extend-unsafe-fixes = [
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
+lines-after-imports = 2
 
 [tool.ruff.format]
 quote-style = "double"
@@ -60,7 +61,6 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.13"
 alembic = "^1.18.3"
-pydantic-settings = "^2.12.0"
 ruff = "^0.14.14"
 pyright = "^1.1.408"
 sqlalchemy = "^2.0.46"
@@ -72,6 +72,9 @@ fastapi = "^0.128.0"
 uvicorn = "^0.40.0"
 jinja2 = "^3.1.6"
 uuid6 = "^2025.0.1"
+python-dotenv = "^1.2.1"
+inflection = "^0.5.1"
+pydantic = {extras = ["email"], version = "^2.12.5"}
 
 
 [build-system]
