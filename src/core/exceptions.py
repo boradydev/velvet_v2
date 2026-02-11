@@ -1,2 +1,2 @@
-class VelvetException(Exception):
+class BaseAppException(Exception):
     pass
