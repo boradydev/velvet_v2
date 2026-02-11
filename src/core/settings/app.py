@@ -1,13 +1,12 @@
+import os
+from dataclasses import dataclass
+
 from src.core.enums import AppEnv
-from src.core.settings.base import Settings
 
 
-class AppSettings(Settings):
-    APP_ENV: AppEnv
-    APP_HOST: str
-    ROOT_PATH: str
-    UNCONFIRMED_REGISTRATION_EXPIRE_MINUTES: int
-    CONFIRM_CODE_EXPIRE_MINUTES: int
-
-
-settings = AppSettings()  # type: ignore reportCallIssue
+@dataclass(frozen=True, slots=True)
+class AppSettings:
+    APP_ENV: AppEnv = AppEnv(os.environ["APP_ENV"])
+    ROOT_PATH: str = os.environ["ROOT_PATH"]
+    REGISTRATION_EXPIRE_MINUTES: int = os.environ["REGISTRATION_EXPIRE_MINUTES"]
+    CONFIRM_CODE_EXPIRE_MINUTES: int = os.environ["CONFIRM_CODE_EXPIRE_MINUTES"]

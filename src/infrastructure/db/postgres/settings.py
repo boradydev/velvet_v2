@@ -1,14 +1,14 @@
-from pydantic import SecretStr
+import os
+from dataclasses import dataclass
 
-from src.core.settings.base import Settings
 
-
-class PostgresSettings(Settings):
-    DB_HOST: str
-    DB_PORT: int
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: SecretStr
-    POSTGRES_DB: str
+@dataclass(frozen=True, slots=True)
+class PostgresSettings:
+    DB_HOST: str = os.environ["DB_HOST"]
+    DB_PORT: str = os.environ["DB_PORT"]
+    POSTGRES_USER: str = os.environ["POSTGRES_USER"]
+    POSTGRES_PASSWORD: str = os.environ["POSTGRES_PASSWORD"]
+    POSTGRES_DB: str = os.environ["POSTGRES_DB"]
 
     @property
     def DB_URL_ASYNC(self):
@@ -22,11 +22,8 @@ class PostgresSettings(Settings):
     @property
     def DB_URL_SYNC(self):
         return (
-            f"postgresql+psycopg2://{self.POSTGRES_USER}:"
-            f"{self.POSTGRES_PASSWORD.get_secret_value()}@"
+            f"postgresql+psycopg2://"
+            f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
             f"{self.DB_HOST}:{self.DB_PORT}/"
             f"{self.POSTGRES_DB}"
         )
-
-
-postgres_settings = PostgresSettings()  # type: ignore reportCallIssue
