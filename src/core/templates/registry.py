@@ -3,16 +3,29 @@ from abc import ABC, abstractmethod
 
 class TemplateRegistry(ABC):
     @abstractmethod
-    def add(self, filename: str, template_dir: str | None = None, **kwargs) -> None:
+    def add(
+        self,
+        filename: str,
+        template_dir: str | None = None,
+        **kwargs,
+    ) -> None:
         """
-        :param template_dir: Можно указать путь до папки с файлом
-        :param filename: Имя файла для добавления
-        :param kwargs: Словарь переменных для подстановки в Markdown
+        Регистрирует новый шаблон в системе.
+
+        Args:
+            filename: Имя файла для добавления.
+            template_dir: Путь до папки с файлом.
+            kwargs: Переменные для подстановки в Markdown.
         """
 
     @abstractmethod
     def get(self, filename) -> str:
         """
-        :param filename: Имя файла для получения
-        :return: Текст шаблона
+        Возвращает текст шаблона по его имени.
+
+        Args:
+            filename: Имя файла для получения.
+
+        Returns:
+            Текст шаблона.
         """
