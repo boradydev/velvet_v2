@@ -1,49 +1,45 @@
-import secrets
-from datetime import timedelta, datetime, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jwt
-from passlib.context import CryptContext
 
-from src.infrastructure.auth.jwt.exceptions import (
-    NotAnAccessTokenException,
-    NotARefreshTokenException,
-    ExpiredSignatureException,
-    InvalidSignatureException,
-)
-
-from src.infrastructure.auth.jwt.settings import jwt_settings
+from src.application.employees.dto import AccessTokenPayload, RefreshTokenPayload
+from src.application.services.token import ITokenService
+from src.infrastructure.auth.jwt import exceptions
+from src.infrastructure.auth.jwt.settings import JwtSettings
 
 
-class TokensService:
-    _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+class JwtTokensService(ITokenService):
+    _jwt_settings: JwtSettings
 
-    def hash_password(self, password: str) -> str:
-        return self._pwd_context.hash(password)
+    def __init__(self, jwt_settings: JwtSettings) -> None:
+        self._jwt_settings = jwt_settings
 
     def create_access_token(self, **kwargs) -> str:
         """
         Создаёт JWT access-токен с заданными данными и временем истечения.
 
-        Аргументы:
+        В токен автоматически добавляется поле "exp" (время истечения),
+            на основе настроек `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`.
+        Секрет и алгоритм берутся из конфигурации
+            (`self._jwt_settings.JWT_SECRET_KEY`, `self._jwt_settings.JWT_ALGORITHM`).
+
+        Args:
             **kwargs: Ключевые аргументы (payload), которые нужно закодировать в токене.
 
-        Возвращает:
+        Returns:
             str: Сформированный JWT access-токен в виде строки.
-
-        Примечания:
-            - В токен автоматически добавляется поле "exp" (время истечения),
-              на основе настроек `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`.
-            - Секрет и алгоритм берутся из конфигурации (`jwt_settings.JWT_SECRET_KEY`, `jwt_settings.JWT_ALGORITHM`).
         """
         to_encode = kwargs.copy()
-        expires_delta = timedelta(minutes=jwt_settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-        expire = datetime.now(timezone.utc) + expires_delta
+        expires_delta = timedelta(
+            minutes=self._jwt_settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+        expire = datetime.now(UTC) + expires_delta
         to_encode.update({"exp": expire, "type_token": "access"})
         encoded_jwt = jwt.encode(
             to_encode,
-            jwt_settings.JWT_SECRET_KEY.get_secret_value(),
-            algorithm=jwt_settings.JWT_ALGORITHM,
+            self._jwt_settings.JWT_SECRET_KEY,
+            algorithm=self._jwt_settings.JWT_ALGORITHM,
         )
         return str(encoded_jwt)
 
@@ -51,112 +47,90 @@ class TokensService:
         """
         Генерирует JWT refresh-токен с истечением срока и заданными данными.
 
-        Аргументы:
+        Args:
             **kwargs: Ключевые аргументы (payload), которые нужно закодировать в токене.
 
-        Возвращает:
+        Returns:
             str: Сформированный JWT refresh-токен в виде строки.
 
-        Примечания:
+        Raises:
             - В токен автоматически добавляется поле "exp" (время истечения),
               на основе настроек `JWT_REFRESH_TOKEN_EXPIRE_DAYS`.
-            - Секрет и алгоритм берутся из конфигурации (`jwt_settings.JWT_SECRET_KEY`, `jwt_settings.JWT_ALGORITHM`).
+            - Секрет и алгоритм берутся из конфигурации
+            (`self._jwt_settings.JWT_SECRET_KEY`, `self._jwt_settings.JWT_ALGORITHM`).
         """
         to_encode = kwargs.copy()
-        expires_delta = timedelta(days=jwt_settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
-        expire = datetime.now(timezone.utc) + expires_delta
+        expires_delta = timedelta(days=self._jwt_settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = datetime.now(UTC) + expires_delta
         to_encode.update({"exp": expire, "type_token": "refresh"})
         encoded_jwt = jwt.encode(
             to_encode,
-            jwt_settings.JWT_SECRET_KEY.get_secret_value(),
-            algorithm=jwt_settings.JWT_ALGORITHM,
+            self._jwt_settings.JWT_SECRET_KEY,
+            algorithm=self._jwt_settings.JWT_ALGORITHM,
         )
         return str(encoded_jwt)
 
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        """
-        Проверяет соответствие введённого пароля и хэша.
-
-        Аргументы:
-            plain_password (str): Обычный (не захешированный) пароль.
-            hashed_password (str): Хэш пароля, сохранённый в базе данных.
-
-        Возвращает:
-            bool: True, если пароль совпадает с хэшем, иначе False.
-        """
-        return self._pwd_context.verify(plain_password, hashed_password)
-
-    def decode_access_token(self, access_token: str) -> dict[str, Any]:
+    def get_payload_access_token(self, access_token: str) -> AccessTokenPayload:
         """
         Декодирует access-токен и проверяет его тип.
 
-        Аргументы:
+        Args:
             access_token (str): JWT access-токен.
 
-        Возвращает:
+        Returns:
             dict: Payload токена.
 
-        Исключения:
+        Raises:
             NotAnAccessTokenException: Если тип токена не 'access'.
             jwt.ExpiredSignatureError: Если срок действия токена истёк.
             jwt.InvalidSignatureError: Если подпись токена недействительна.
         """
         payload = self._jwt_decode(token=access_token)
         if payload["type_token"] != "access":
-            raise NotAnAccessTokenException
-        return payload
+            raise exceptions.NotAnAccessTokenException
+        return AccessTokenPayload(**payload)
 
-    def decode_refresh_token(self, refresh_token: str) -> dict[str, Any]:
+    def get_payload_refresh_token(self, refresh_token: str) -> RefreshTokenPayload:
         """
         Декодирует refresh-токен и проверяет его тип.
 
         Аргументы:
             refresh_token (str): JWT refresh-токен.
 
-        Возвращает:
+        Returns:
             dict: Payload токена.
 
-        Исключения:
+        Raises:
             NotARefreshTokenException: Если тип токена не 'refresh'.
             jwt.ExpiredSignatureError: Если срок действия токена истёк.
             jwt.InvalidSignatureError: Если подпись токена недействительна.
         """
         payload = self._jwt_decode(token=refresh_token)
         if payload["type_token"] != "refresh":
-            raise NotARefreshTokenException
-        return payload
+            raise exceptions.NotARefreshTokenException
+        return RefreshTokenPayload(**payload)
 
     def _jwt_decode(self, token: str) -> dict[str, Any]:
         """
         Декодирует JWT-токен без проверки его типа.
 
-        Аргументы:
+        Args:
             token (str): JWT-токен (access или refresh).
 
-        Возвращает:
+        Returns:
             dict: Расшифрованный payload токена.
 
-        Исключения:
+        Raises:
             jwt.ExpiredSignatureError: Если срок действия токена истёк.
             jwt.InvalidSignatureError: Если подпись токена недействительна.
         """
         try:
-            payload: dict[str, Any] = jwt.decode(
+            return jwt.decode(
                 token,
-                jwt_settings.JWT_SECRET_KEY.get_secret_value(),
-                algorithms=[jwt_settings.JWT_ALGORITHM],
+                self._jwt_settings.JWT_SECRET_KEY,
+                algorithms=[self._jwt_settings.JWT_ALGORITHM],
             )
         except jwt.ExpiredSignatureError as exc:
-            raise ExpiredSignatureException from exc
+            raise exceptions.ExpiredSignatureException from exc
         except jwt.InvalidSignatureError as exc:
-            raise InvalidSignatureException from exc
-        except Exception as exc:
-            raise exc
-        return payload
-
-    @staticmethod
-    def create_confirm_code() -> str:
-        return f"{secrets.randbelow(1_000_000):06}"
-
-
-token_service = TokensService()
+            raise exceptions.InvalidSignatureException from exc
