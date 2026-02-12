@@ -67,3 +67,7 @@ class StandardResponse[DataType: BaseSchema](BaseResponse):
     """
 
     data: DataType
+
+class ErrorResponse(BaseSchema):
+    detail: str
+    meta: Meta = Field(default_factory=Meta)
