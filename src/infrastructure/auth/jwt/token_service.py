@@ -81,7 +81,7 @@ class JwtTokensService(ITokenService):
             dict: Payload токена.
 
         Raises:
-            NotAnAccessTokenException: Если тип токена не 'access'.
+            NotAnAccessTokenException: Если тип токена не "access".
             jwt.ExpiredSignatureError: Если срок действия токена истёк.
             jwt.InvalidSignatureError: Если подпись токена недействительна.
         """
@@ -101,7 +101,7 @@ class JwtTokensService(ITokenService):
             dict: Payload токена.
 
         Raises:
-            NotARefreshTokenException: Если тип токена не 'refresh'.
+            NotARefreshTokenException: Если тип токена не "refresh".
             jwt.ExpiredSignatureError: Если срок действия токена истёк.
             jwt.InvalidSignatureError: Если подпись токена недействительна.
         """

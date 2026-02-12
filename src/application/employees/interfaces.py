@@ -9,7 +9,7 @@ from src.domain.employees.interfaces import IPasswordService
 
 
 class IEmployeeInteractorFactory(Protocol):
-    """Интерфейс фабрики интеракторов домена 'Сотрудники' (Employees)."""
+    """Интерфейс фабрики интеракторов домена "Сотрудники" (Employees)."""
 
     def create_register_interactor(self) -> interactors.RegisterInteractor:
         """Создает сценарий регистрации нового сотрудника."""

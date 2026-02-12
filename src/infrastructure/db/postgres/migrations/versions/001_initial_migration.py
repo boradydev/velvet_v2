@@ -12,7 +12,7 @@ from alembic import op
 from src.infrastructure.db.postgres.migrations.utils import sql
 
 # revision identifiers, used by Alembic.
-revision: str = '648d45859b4d'
+revision: str = "648d45859b4d"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
