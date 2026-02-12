@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from src.core.logger import get_logger
 from src.infrastructure.auth.jwt.token_service import JwtTokensService
 from src.infrastructure.db.postgres.database import Postgres
 from src.infrastructure.email.smtp import EmailService
@@ -20,6 +21,7 @@ from src.presentation.fastapi.base.handlers import register_exception_handlers
 async def lifespan(app: FastAPI):
     """Управляет жизненным циклом ресурсов приложения."""
     settings = Settings()
+    logger = get_logger()
     postgres = Postgres(settings.postgres.DB_URL_ASYNC)
     interactor_resources = InteractorResources(
         session_factory=postgres.session_factory,
@@ -31,6 +33,7 @@ async def lifespan(app: FastAPI):
     app.state.resources = AppResources(
         settings=settings,
         interactors=interactor_resources,
+        logger=logger,
     )
     app.root_path = settings.app.ROOT_PATH
     yield

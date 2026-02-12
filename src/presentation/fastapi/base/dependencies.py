@@ -1,3 +1,5 @@
+from logging import Logger
+
 from fastapi.requests import Request
 
 from src.core.settings.app import AppSettings
@@ -60,11 +62,13 @@ class AppResources:
 
     settings: Settings
     interactors: InteractorResources
+    logger: Logger
 
     def __init__(
         self,
         settings: Settings,
         interactors: InteractorResources,
+        logger: Logger,
     ) -> None:
         """
         Инициализирует контейнер ресурсов.
@@ -72,9 +76,11 @@ class AppResources:
         Args:
             settings: Сконфигурированный объект Settings.
             interactors: Готовый к работе клиент InteractorFactory.
+            logger: Готовый объект логгера.
         """
         self.settings = settings
         self.interactors = interactors
+        self.logger = logger
 
 
 def get_resources(request: Request) -> AppResources:
