@@ -29,6 +29,7 @@ async def lifespan(app: FastAPI):
         password_service=PasswordService(settings.password.DEFAULT_CONTEXT),
         confirm_code_service=ConfirmCodeService(),
         email_service=EmailService(),
+        logger=logger,
     )
     app.state.resources = AppResources(
         settings=settings,

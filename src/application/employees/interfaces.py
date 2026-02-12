@@ -3,6 +3,7 @@ from typing import Any, Protocol
 
 from src.application.employees import interactors
 from src.application.services.code import IConfirmationCodeService
+from src.application.services.logger import ILogger
 from src.application.services.send import IEmailService
 from src.application.services.token import ITokenService
 from src.domain.employees.interfaces import IPasswordService
@@ -40,3 +41,7 @@ class IEmployeeInteractorResources(Protocol):
     @property
     def email_service(self) -> IEmailService:
         """Транспорт для отправки уведомлений на почту."""
+
+    @property
+    def logger(self) -> ILogger:
+        """Логгер."""

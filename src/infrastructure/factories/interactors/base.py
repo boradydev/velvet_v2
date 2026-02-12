@@ -3,6 +3,7 @@ from typing import Any
 
 from src.application.employees.interfaces import IEmployeeInteractorFactory
 from src.application.services.code import IConfirmationCodeService
+from src.application.services.logger import ILogger
 from src.application.services.send import IEmailService
 from src.application.services.token import ITokenService
 from src.domain.employees.interfaces import IPasswordService
@@ -19,12 +20,14 @@ class InteractorResources:
         password_service: IPasswordService,
         confirm_code_service: IConfirmationCodeService,
         email_service: IEmailService,
+        logger: ILogger,
     ) -> None:
         self._session_factory = session_factory
         self._token_service = token_service
         self._password_service = password_service
         self._confirm_code_service = confirm_code_service
         self._email_service = email_service
+        self._logger = logger
 
         self.employees: IEmployeeInteractorFactory = EmployeeInteractorFactory(self)
 
@@ -47,3 +50,7 @@ class InteractorResources:
     @property
     def email_service(self) -> IEmailService:
         return self._email_service
+
+    @property
+    def logger(self) -> ILogger:
+        return self._logger

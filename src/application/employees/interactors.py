@@ -1,6 +1,7 @@
 from src.application.employees import exceptions
 from src.application.employees.dto import CredentialsEmployeeDTO
 from src.application.services.code import IConfirmationCodeService
+from src.application.services.logger import ILogger
 from src.application.services.send import IEmailService
 from src.application.services.token import ITokenService
 from src.domain.employees.entities import Employee
@@ -15,6 +16,7 @@ class RegisterInteractor:
     password_service: IPasswordService
     confirmation_code_service: IConfirmationCodeService
     send_email_service: IEmailService
+    logger: ILogger
 
     def __init__(
         self,
@@ -22,11 +24,13 @@ class RegisterInteractor:
         password_service: IPasswordService,
         confirmation_code_service: IConfirmationCodeService,
         send_email_service: IEmailService,
+        logger: ILogger,
     ):
         self.uow = uow
         self.password_service = password_service
         self.confirmation_code_service = confirmation_code_service
         self.send_email_service = send_email_service
+        self.logger = logger
 
     async def register(self, dto: CredentialsEmployeeDTO) -> None:
         password_hash = self.password_service.hashing_password(dto.password)
@@ -51,16 +55,19 @@ class LoginInteractor:
     uow: IEmployeeUOW
     token_service: ITokenService
     password_service: IPasswordService
+    logger: ILogger
 
     def __init__(
         self,
         token_service: ITokenService,
         uow: IEmployeeUOW,
         password_service: IPasswordService,
+        logger: ILogger,
     ):
         self.uow = uow
         self.token_service = token_service
         self.password_service = password_service
+        self.logger = logger
 
-    async def register(self, dto: CredentialsEmployeeDTO) -> None:
+    async def login(self, dto: CredentialsEmployeeDTO) -> None:
         pass

@@ -43,6 +43,7 @@ class EmployeeInteractorFactory:
             password_service=self.resources.password_service,
             confirmation_code_service=self.resources.confirm_code_service,
             send_email_service=self.resources.email_service,
+            logger=self.resources.logger,
         )
 
     def create_login_interactor(self) -> interactors.LoginInteractor:
@@ -55,4 +56,5 @@ class EmployeeInteractorFactory:
             uow=uow,
             token_service=self.resources.token_service,
             password_service=self.resources.password_service,
+            logger=self.resources.logger,
         )
