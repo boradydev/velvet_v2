@@ -4,6 +4,7 @@ from fastapi.requests import Request
 
 from src.core.settings.app import AppSettings
 from src.infrastructure.auth.jwt.settings import JwtSettings
+from src.infrastructure.brokers.rabbit_mq.settings import EvenBusSettings
 from src.infrastructure.db.postgres.settings import PostgresSettings
 from src.infrastructure.factories.interactors.base import InteractorResources
 from src.infrastructure.security.settings import PasswordSettings
@@ -25,6 +26,7 @@ class Settings:
     app: AppSettings
     jwt: JwtSettings
     password: PasswordSettings
+    event_bus: EvenBusSettings
 
     def __init__(
         self,
@@ -32,6 +34,7 @@ class Settings:
         app: AppSettings | None = None,
         jwt: JwtSettings | None = None,
         password: PasswordSettings | None = None,
+        event_bus: EvenBusSettings | None = None,
     ) -> None:
         """
         Инициализирует объект Settings значениями по умолчанию.
@@ -41,11 +44,13 @@ class Settings:
             app: Экземпляр класса настроек приложения.
             jwt: Экземпляр класса настроек токенов.
             password: Экземпляр класса настроек для паролей.
+            event_bus: Экземпляр класса настроек для шины событий
         """
         self.postgres = postgres or PostgresSettings()
         self.app = app or AppSettings()
         self.jwt = jwt or JwtSettings()
         self.password = password or PasswordSettings()
+        self.event_bus = event_bus or EvenBusSettings()
 
 
 class AppResources:

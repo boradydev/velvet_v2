@@ -75,6 +75,7 @@ uuid6 = "^2025.0.1"
 python-dotenv = "^1.2.1"
 inflection = "^0.5.1"
 pydantic = {extras = ["email"], version = "^2.12.5"}
+aio-pika = "^9.5.8"
 
 
 [build-system]

@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from src.core.logger import get_logger
 from src.infrastructure.auth.jwt.token_service import JwtTokensService
+from src.infrastructure.brokers.rabbit_mq.client import RabbitMQEventBus
 from src.infrastructure.db.postgres.database import Postgres
 from src.infrastructure.email.smtp import EmailService
 from src.infrastructure.factories.interactors.base import InteractorResources
@@ -23,6 +24,10 @@ async def lifespan(app: FastAPI):
     settings = Settings()
     logger = get_logger()
     postgres = Postgres(settings.postgres.DB_URL_ASYNC)
+    event_bus = RabbitMQEventBus(
+        url=settings.event_bus.AMQP_URL,
+        exchange_name=settings.event_bus.DOMAIN_EVENTS_EXCHANGE
+    )
     interactor_resources = InteractorResources(
         session_factory=postgres.session_factory,
         token_service=JwtTokensService(settings.jwt),
@@ -30,6 +35,7 @@ async def lifespan(app: FastAPI):
         confirm_code_service=ConfirmCodeService(),
         email_service=EmailService(),
         logger=logger,
+        event_bus=event_bus
     )
     app.state.resources = AppResources(
         settings=settings,
