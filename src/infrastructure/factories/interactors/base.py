@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
+from src.application.base.interfaces import IEventBus
 from src.application.employees.interfaces import IEmployeeInteractorFactory
 from src.application.services.code import IConfirmationCodeService
 from src.application.services.logger import ILogger
@@ -21,6 +22,7 @@ class InteractorResources:
         confirm_code_service: IConfirmationCodeService,
         email_service: IEmailService,
         logger: ILogger,
+        event_bus: IEventBus,
     ) -> None:
         self._session_factory = session_factory
         self._token_service = token_service
@@ -28,6 +30,7 @@ class InteractorResources:
         self._confirm_code_service = confirm_code_service
         self._email_service = email_service
         self._logger = logger
+        self._event_bus = event_bus
 
         self.employees: IEmployeeInteractorFactory = EmployeeInteractorFactory(self)
 
@@ -50,6 +53,10 @@ class InteractorResources:
     @property
     def email_service(self) -> IEmailService:
         return self._email_service
+
+    @property
+    def even_bus(self) -> IEventBus:
+        return self._event_bus
 
     @property
     def logger(self) -> ILogger:

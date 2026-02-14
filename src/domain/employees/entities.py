@@ -5,6 +5,7 @@ from uuid6 import UUID, uuid7
 
 from src.domain.base.entities import BaseEntity
 from src.domain.employees import value_objects
+from src.domain.employees.events import EmployeeRegisteredEvent
 from src.domain.employees.exceptions import PermissionDeniedException
 
 
@@ -51,7 +52,7 @@ class Employee(BaseEntity):
     @classmethod
     def register(cls, email: str, password_hash: str) -> Self:
         """Фабричный метод, регистрация нового сотрудника."""
-        return cls(
+        employee = cls(
             id=uuid7(),
             email=value_objects.Email(email),
             password_hash=value_objects.PasswordHash(password_hash),
@@ -63,4 +64,11 @@ class Employee(BaseEntity):
                 value_objects.Permission.SALE,
                 value_objects.Permission.SALE_RETURN,
             },
+        )
+
+        employee._add_event(
+            EmployeeRegisteredEvent(
+                employee_id=employee.id,
+                email=str(employee.email)
+            )
         )

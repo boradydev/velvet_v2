@@ -3,6 +3,7 @@ from typing import Any, Self, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from src.application.base.interfaces import IEventBus
 from src.domain.employees.interfaces import IEmployeeRepository, IEmployeeUOW
 from src.infrastructure.db.postgres.uow.base import IPostgresUOW
 
@@ -18,11 +19,13 @@ class EmployeeUOW(IPostgresUOW, IEmployeeUOW):
 
     _employee_repo_class: Callable[[AsyncSession], IEmployeeRepository]
     employees: IEmployeeRepository
+    _event_bas: IEventBus
 
     def __init__(
         self,
         session_factory: Callable[[], Any],
         employee_repo_class: Callable[[AsyncSession], IEmployeeRepository],
+        event_bas: IEventBus
     ) -> None:
         """
         Инициализирует Unit of Work.
@@ -35,10 +38,12 @@ class EmployeeUOW(IPostgresUOW, IEmployeeUOW):
 
         Args:
             session_factory: Абстрактный поставщик сессий (Callable).
+            event_bas: Абстрактный поставщик шины событий.
             employee_repo_class: Класс или фабрика для создания репозитория сотрудников.
         """
         self._session_factory = cast(async_sessionmaker[AsyncSession], session_factory)
         self._employee_repo_class = employee_repo_class
+        self._event_bas = event_bas
 
     async def __aenter__(self) -> Self:
         """

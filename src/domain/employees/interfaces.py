@@ -4,6 +4,8 @@ from typing import Self
 
 from uuid6 import UUID
 
+from src.application.base.interfaces import IEventBus
+from src.domain.base.events import BaseDomainEvent
 from src.domain.employees.entities import Employee
 
 
@@ -56,6 +58,7 @@ class IEmployeeUOW(ABC):
     """
 
     employees: IEmployeeRepository
+    _event_bus: IEventBus
 
     @abstractmethod
     async def __aenter__(self) -> Self:
@@ -71,7 +74,7 @@ class IEmployeeUOW(ABC):
         """Закрывает контекст. Выполняет автоматический откат при ошибке."""
 
     @abstractmethod
-    async def commit(self) -> None:
+    async def commit(self, events: list[BaseDomainEvent]) -> None:
         """Фиксирует все изменения текущей транзакции в базе данных."""
 
     @abstractmethod

@@ -14,22 +14,16 @@ from src.domain.employees.interfaces import (
 class RegisterInteractor:
     uow: IEmployeeUOW
     password_service: IPasswordService
-    confirmation_code_service: IConfirmationCodeService
-    send_email_service: IEmailService
     logger: ILogger
 
     def __init__(
         self,
         uow: IEmployeeUOW,
         password_service: IPasswordService,
-        confirmation_code_service: IConfirmationCodeService,
-        send_email_service: IEmailService,
         logger: ILogger,
     ):
         self.uow = uow
         self.password_service = password_service
-        self.confirmation_code_service = confirmation_code_service
-        self.send_email_service = send_email_service
         self.logger = logger
 
     async def register(self, dto: CredentialsEmployeeDTO) -> None:
@@ -43,12 +37,7 @@ class RegisterInteractor:
                 password_hash=password_hash,
             )
             await db.employees.add(employee)
-            await db.commit()
-
-        self.send_email_service.send(
-            email=employee.email,
-            message=self.confirmation_code_service.create_code(),
-        )
+            await db.commit(events=employee.pull_events())
 
 
 class LoginInteractor:

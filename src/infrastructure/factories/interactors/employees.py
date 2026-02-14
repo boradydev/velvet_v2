@@ -36,13 +36,12 @@ class EmployeeInteractorFactory:
         uow = EmployeeUOW(
             session_factory=self.resources.session_factory,
             employee_repo_class=EmployeeRepository,
+            event_bas=self.resources.even_bus,
         )
 
         return interactors.RegisterInteractor(
             uow=uow,
             password_service=self.resources.password_service,
-            confirmation_code_service=self.resources.confirm_code_service,
-            send_email_service=self.resources.email_service,
             logger=self.resources.logger,
         )
 
@@ -51,6 +50,7 @@ class EmployeeInteractorFactory:
         uow = EmployeeUOW(
             session_factory=self.resources.session_factory,
             employee_repo_class=EmployeeRepository,
+            event_bas=self.resources.even_bus,
         )
         return interactors.LoginInteractor(
             uow=uow,
