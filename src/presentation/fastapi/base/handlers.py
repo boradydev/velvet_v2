@@ -1,41 +1,14 @@
+import traceback
 from collections.abc import Callable, Coroutine, Mapping
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from src.application.services.logger import ILogger
 from src.core.exceptions import BaseAppException
-from src.core.logger import get_logger
-from src.presentation.fastapi.base.schemas import ErrorResponse
 from src.presentation.fastapi.base.types import Resp
-from src.presentation.fastapi.employees.handlers import EMPLOYEE_EXCEPTION_MAP
-
-
-def handle_unmapped_exception(exc: Exception) -> JSONResponse:
-    """
-    Логирует тип исключения и возвращает унифицированный ответ 500.
-
-    Этот метод служит индикатором "пропущенного маппинга" в словаре исключений
-    приложения (exception_map). Если бизнес-исключение (BaseAppException)
-    не нашло своего соответствия в карте ответов, оно попадает сюда.
-
-    Логирование:
-        Используется краткая запись (Qualified Name класса ошибки), что позволяет
-        быстро отследить, какое именно исключение забыли обработать в
-        EMPLOYEE_EXCEPTION_MAP_VAR, не засоряя при этом лог избыточным Traceback.
-
-    Returns:
-        JSONResponse: Ответ 500, сигнализирующий о внутренней ошибке обработки.
-    """
-    error_path = f"{type(exc).__module__}.{type(exc).__name__}"
-    get_logger().error("Unmapped exception caught: %s", error_path)
-    return JSONResponse(
-        status_code=500,
-        content=ErrorResponse(
-            detail="Internal Server Error",
-        ).model_dump(mode="json"),
-    )
 
 
 def get_business_exception_handler(
@@ -44,11 +17,15 @@ def get_business_exception_handler(
     """
     Создает универсальный асинхронный обработчик для исключений приложения.
 
-    Функция реализует маппинг внутренних исключений (BaseAppException) в HTTP-ответы
-    на основе предоставленной карты соответствий. Если исключение является частью
-    бизнес-логики, возвращается JSONResponse с параметрами из exception_map.
-    В случае системной ошибки или отсутствия маппинга (KeyError) возвращается
-        500 статус.
+    Функция трансформирует внутренние исключения (BaseAppException) в HTTP-ответы
+    на основе предоставленной карты (exception_map).
+
+    Логика обработки:
+        1. Если тип исключения найден в exception_map, возвращается JSONResponse
+           с соответствующим статусом и деталями.
+        2. Если маппинг для данного исключения отсутствует, оно пробрасывается
+           дальше (raise), позволяя глобальному обработчику (unknown_exception_handler)
+           зафиксировать ошибку с полным Traceback для дебага.
 
     Args:
         exception_map: Словарь, сопоставляющий классы исключений их
@@ -56,6 +33,9 @@ def get_business_exception_handler(
 
     Returns:
         Callable: Асинхронная функция-обработчик, совместимая с интерфейсом FastAPI.
+
+    Raises:
+        Exception: Если переданный объект не является ошибкой валидации.
     """
 
     async def handler(_: Request, exc: Exception) -> JSONResponse:
@@ -64,12 +44,12 @@ def get_business_exception_handler(
             if resp:
                 return JSONResponse(
                     status_code=resp.status_code,
-                    content=ErrorResponse(
-                        detail=resp.detail,
-                    ).model_dump(mode="json"),
+                    content={
+                        "detail": resp.detail,
+                    },
                 )
 
-        return handle_unmapped_exception(exc)
+        raise exc
 
     return handler
 
@@ -78,58 +58,83 @@ async def validation_exception_handler(_: Request, exc: Exception) -> JSONRespon
     """
     Обработчик исключений валидации Pydantic (RequestValidationError).
 
-    Принимает системную ошибку валидации FastAPI/Pydantic и трансформирует её
-    в унифицированный формат ответа приложения. Использует проверку isinstance
-    для обеспечения типизации и безопасности в рантайме.
+    Трансформирует системную ошибку валидации FastAPI/Pydantic в унифицированный
+    формат ответа приложения (422 Unprocessable Entity).
+
+    Логика обработки:
+        1. Если исключение является RequestValidationError, возвращается
+           JSONResponse с детальным описанием ошибок валидации.
+        2. В случае несоответствия типа (защитная проверка), исключение
+           пробрасывается выше (raise) в глобальный обработчик для
+           фиксации непредвиденной ошибки в логах.
 
     Args:
-        _: Объект запроса (не используется, но требуется сигнатурой FastAPI).
-        exc: Выброшенное исключение (ожидается RequestValidationError).
+        _: Объект запроса (требуется сигнатурой FastAPI).
+        exc: Выброшенное исключение.
 
     Returns:
-        JSONResponse: Ответ со статусом 422 и деталями валидации или
-            500 при несоответствии типа.
+        JSONResponse: Ответ со статусом 422 и деталями валидации.
+
+    Raises:
+        Exception: Если переданный объект не является ошибкой валидации.
     """
     if isinstance(exc, RequestValidationError):
         return JSONResponse(
             status_code=422,
-            content=ErrorResponse(
-                detail=str(exc.errors()),
-            ).model_dump(mode="json"),
+            content={
+                "detail": str(exc.errors()),
+            },
         )
 
-    return handle_unmapped_exception(exc)
+    raise exc
 
 
-async def unknown_exception_handler(_: Request, exc: Exception) -> JSONResponse:
-    """
-    Обработчик непредвиденных системных исключений (500 Internal Server Error).
+def get_unknown_exception_handler(
+    logger: ILogger,
+    debug: bool = False,
+) -> Callable[..., Coroutine[Any, Any, JSONResponse]]:
+    """Создает обработчик непредвиденных системных исключений."""
 
-    Этот хендлер является "последним рубежом" обороны приложения. Он перехватывает
-    любые ошибки, не относящиеся к бизнес-логике (например, KeyError, ValueError).
+    async def handler(
+        _: Request,
+        exc: Exception,
+    ) -> JSONResponse:
+        """
+        Обработчик.
 
-    Логирование:
-        Используется параметр 'exc_info=True', который принудительно включает
-        полный Traceback в лог. Это критически важно для дебага, так как позволяет
-        точно определить файл и строку кода, где возникла ошибка, не раскрывая
-        эти детали конечному пользователю.
+        Хендлер перехватывает любые необработанные ошибки (KeyError, ValueError и др.),
+        предотвращая падение процесса и обеспечивая унифицированный ответ клиенту.
 
-    Returns:
-        JSONResponse: Унифицированный ответ со статусом 500.
-    """
-    get_logger().error(exc, exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content=ErrorResponse(
-            detail="Internal Server Error",
-        ).model_dump(mode="json"),
-    )
+        Логика работы:
+        1. Логирование: Ошибка записывается через `ILogger` с `exc_info=True`,
+           что сохраняет полный traceback в логах для последующего анализа.
+        2. Безопасность: В режиме `debug=False` пользователю отдается только
+           общий текст "Internal Server Error".
+        3. Отладка: В режиме `debug=True` в ответ включается описание ошибки
+           и строковый traceback для быстрой диагностики без проверки логов.
 
+        Args:
+        _: Request: Объект запроса (не используется).
+        exc: Exception: Возникшее исключение.
 
-def register_exception_handlers(app: FastAPI) -> None:
-    """Регистрация глобальных обработчиков исключений для FastAPI."""
-    app.add_exception_handler(
-        BaseAppException, get_business_exception_handler(EMPLOYEE_EXCEPTION_MAP)
-    )
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    app.add_exception_handler(Exception, unknown_exception_handler)
+        Returns:
+        JSONResponse: Ответ со статусом 500 и деталями в зависимости от режима debug.
+        """
+        logger.error(exc, exc_info=True)
+        content = {"detail": "Internal Server Error"}
+        if debug:
+            content.update(
+                {
+                    "detail": str(exc),
+                    "traceback": traceback.format_exc(),
+                }
+            )
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Internal Server Error",
+            },
+        )
+
+    return handler
