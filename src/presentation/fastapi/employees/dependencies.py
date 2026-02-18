@@ -3,10 +3,11 @@ from typing import Annotated
 from fastapi import Depends
 
 from src.application.employees import interactors
-from src.presentation.fastapi.base.dependencies import AppResources, get_resources
+from src.infrastructure.common.resources import LifespanState
+from src.presentation.fastapi.base.dependencies import get_lifespan_state
 
 
 def get_register_interactor(
-    res: Annotated[AppResources, Depends(get_resources)],
+    lifespan: Annotated[LifespanState, Depends(get_lifespan_state)],
 ) -> interactors.RegisterInteractor:
-    return res.interactors.employees.create_register_interactor()
+    return lifespan.interactors.employees.create_register_interactor()
