@@ -1,9 +1,11 @@
+import dotenv
 import uvicorn
 
 from src.core.settings.startup import StartupSettings
 
 
 if __name__ == "__main__":
+    dotenv.load_dotenv()
     settings = StartupSettings()
     uvicorn.run(
         factory=True,
