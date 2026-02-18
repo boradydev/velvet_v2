@@ -36,7 +36,7 @@ class EmployeeInteractorFactory:
         uow = EmployeeUOW(
             session_factory=self.resources.session_factory,
             employee_repo_class=EmployeeRepository,
-            event_bas=self.resources.even_bus,
+            event_publisher=self.resources.event_publisher,
         )
 
         return interactors.RegisterInteractor(
@@ -50,7 +50,7 @@ class EmployeeInteractorFactory:
         uow = EmployeeUOW(
             session_factory=self.resources.session_factory,
             employee_repo_class=EmployeeRepository,
-            event_bas=self.resources.even_bus,
+            event_publisher=self.resources.event_publisher,
         )
         return interactors.LoginInteractor(
             uow=uow,

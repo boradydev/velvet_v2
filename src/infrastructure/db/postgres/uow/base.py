@@ -4,7 +4,7 @@ from typing import Self
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.application.base.interfaces import IEventBus
+from src.application.base.interfaces import IEventPublisher
 from src.domain.base.events import BaseDomainEvent
 
 
@@ -16,12 +16,13 @@ class IPostgresUOW(ABC):
 
     Args:
         _session_factory: Фабрика для создания асинхронных сессий базы данных.
-        _session: Асинхронная сессия.
+        _session: Асинхронная сессия, требуется реализовать в __aenter__.
+        _event_publisher: Отправляет доменные события в брокер событий.
     """
 
     _session_factory: async_sessionmaker[AsyncSession]
     _session: AsyncSession
-    _event_bus: IEventBus
+    _event_publisher: IEventPublisher
 
     @abstractmethod
     async def __aenter__(self) -> Self:
@@ -48,7 +49,7 @@ class IPostgresUOW(ABC):
     async def commit(self, events: list[BaseDomainEvent]) -> None:
         """Фиксирует все изменения текущей транзакции в хранилище."""
         await self._session.commit()
-        await self._event_bus.publish_many(events)
+        await self._event_publisher.publish_many(events)
 
     async def rollback(self) -> None:
         """Отменяет все незафиксированные изменения в текущей транзакции."""

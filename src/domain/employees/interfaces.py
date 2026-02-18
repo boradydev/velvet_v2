@@ -4,9 +4,10 @@ from typing import Self
 
 from uuid6 import UUID
 
-from src.application.base.interfaces import IEventBus
+from src.application.base.interfaces import IEventPublisher
 from src.domain.base.events import BaseDomainEvent
 from src.domain.employees.entities import Employee
+from src.domain.employees.value_objects import Email
 
 
 class IEmployeeRepository(ABC):
@@ -26,7 +27,7 @@ class IEmployeeRepository(ABC):
         """Восстанавливает состояние агрегата сотрудника по его идентификатору."""
 
     @abstractmethod
-    async def exists_by_email(self, email: str) -> bool:
+    async def exists_by_email(self, email: Email) -> bool:
         """Проверяет, зарегистрирован ли уже сотрудник с таким email."""
 
     @abstractmethod
@@ -55,10 +56,14 @@ class IEmployeeUOW(ABC):
     Интерфейс Unit of Work для управления транзакциями данных сотрудников.
 
     Обеспечивает атомарность операций (ACID).
+
+    Attributes:
+        employees: Требует репозиторий для сотрудников.
+        _event_publisher: Требует брокер для публикации событий.
     """
 
     employees: IEmployeeRepository
-    _event_bus: IEventBus
+    _event_publisher: IEventPublisher
 
     @abstractmethod
     async def __aenter__(self) -> Self:

@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 from src.domain.base.events import BaseDomainEvent
 
 
-class IEventBus(ABC):
+class IEventPublisher(ABC):
     """
-    Интерфейс шины событий.
+    Интерфейс брокера событий.
 
     Отвечает за доставку доменных событий соответствующим подписчикам.
     """

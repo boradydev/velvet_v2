@@ -4,12 +4,12 @@ from dataclasses import asdict
 
 import aio_pika
 
-from src.application.base.interfaces import IEventBus
+from src.application.base.interfaces import IEventPublisher
 from src.domain.base.events import BaseDomainEvent
-from src.infrastructure.brokers.rabbit_mq.exceptions import RabbitMQConnectionException
+from src.infrastructure.message_brokers.rabbit_mq.exceptions import RabbitMQConnectionException
 
 
-class RabbitMQEventBus(IEventBus):
+class RabbitMQPublisher(IEventPublisher):
     def __init__(
         self,
         url: str,

@@ -76,6 +76,9 @@ python-dotenv = "^1.2.1"
 inflection = "^0.5.1"
 pydantic = {extras = ["email"], version = "^2.12.5"}
 aio-pika = "^9.5.8"
+taskiq = "^0.12.1"
+taskiq-aio-pika = "^0.5.0"
+redis = "^7.1.1"
 
 
 [build-system]

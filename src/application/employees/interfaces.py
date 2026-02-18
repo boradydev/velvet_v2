@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any, Protocol
 
-from src.application.base.interfaces import IEventBus
+from src.application.base.interfaces import IEventPublisher
 from src.application.employees import interactors
 from src.application.services.logger import ILogger
 from src.application.services.token import ITokenService
@@ -39,11 +39,13 @@ class IEmployeeInteractorResources(Protocol):
         ...
 
     @property
-    def even_bus(self) -> IEventBus:
-        """Шина событйи домена."""
+    def event_publisher(self) -> IEventPublisher:
+        """Брокер событий домена."""
         ...
 
     @property
     def logger(self) -> ILogger:
         """Логгер."""
         ...
+
+
