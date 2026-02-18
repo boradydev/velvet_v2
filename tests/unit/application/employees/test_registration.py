@@ -12,7 +12,7 @@ from src.domain.employees.value_objects import Email
     "test_password",
     [
         "Qwer123$",
-        "Qwer123$124",-
+        "Qwer123$124",
     ],
 )
 async def test_register_success(test_password):
@@ -39,7 +39,7 @@ async def test_register_success(test_password):
         logger=logger,
     )
 
-    await interactor.register(dto)
+    await interactor.execute(dto)
 
     pass_service.hashing_password.assert_called_once_with(dto.password)
 
@@ -75,7 +75,7 @@ async def test_register_unsuccess():
     )
 
     with pytest.raises(EmployeeAlreadyExistsException):
-        await interactor.register(dto)
+        await interactor.execute(dto)
 
     uow.commit.assert_not_called()
     mail_service.send.assert_not_called()
