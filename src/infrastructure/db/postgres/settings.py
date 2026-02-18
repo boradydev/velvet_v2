@@ -1,14 +1,15 @@
-import os
 from dataclasses import dataclass
+
+from src.core.settings.environ import env_field
 
 
 @dataclass(frozen=True, slots=True)
 class PostgresSettings:
-    DB_HOST: str = os.environ["DB_HOST"]
-    DB_PORT: str = os.environ["DB_PORT"]
-    POSTGRES_USER: str = os.environ["POSTGRES_USER"]
-    POSTGRES_PASSWORD: str = os.environ["POSTGRES_PASSWORD"]
-    POSTGRES_DB: str = os.environ["POSTGRES_DB"]
+    DB_HOST: str = env_field(str, "DB_HOST")
+    DB_PORT: str = env_field(str, "DB_PORT")
+    POSTGRES_USER: str = env_field(str, "POSTGRES_USER")
+    POSTGRES_PASSWORD: str = env_field(str, "POSTGRES_PASSWORD")
+    POSTGRES_DB: str = env_field(str, "POSTGRES_DB")
 
     @property
     def DB_URL_ASYNC(self):
