@@ -15,3 +15,15 @@ class JwtSettings:
         int,
         "JWT_REFRESH_TOKEN_EXPIRE_DAYS",
     )
+
+    @property
+    def ACCESS_TOKEN_EXPIRE_SECONDS(self) -> int:
+        return self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+    @property
+    def REFRESH_TOKEN_EXPIRE_SECONDS(self) -> int:
+        return self.JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+
+    @property
+    def DEVICE_ID_EXPIRE_SECONDS(self) -> int:
+        return 365 * 24 * 60 * 60
