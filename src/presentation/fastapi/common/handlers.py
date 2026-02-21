@@ -6,9 +6,9 @@ from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from src.application.services.logger import ILogger
+from src.domain.common.interfaces.services_abc import ILogger
 from src.core.exceptions import BaseAppException
-from src.presentation.fastapi.base.types import Resp
+from src.presentation.fastapi.common.types import Resp
 
 
 def get_business_exception_handler(

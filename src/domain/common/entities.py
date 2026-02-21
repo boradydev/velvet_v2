@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 from uuid6 import UUID
 
-from src.domain.base.events import BaseDomainEvent
+from src.domain.common.events import BaseDomainEvent
 
 
 @dataclass
@@ -13,6 +13,7 @@ class BaseEntity:
     )
 
     def _add_event(self, event: BaseDomainEvent) -> None:
+        """Добавляет событие."""
         self._events.append(event)
 
     def pull_events(self) -> list[BaseDomainEvent]:
@@ -22,6 +23,7 @@ class BaseEntity:
         return events
 
     def __eq__(self, other) -> bool:
+        """Сравнение сущностей по id."""
         if not isinstance(other, type(self)):
             return False
         return self.id == other.id

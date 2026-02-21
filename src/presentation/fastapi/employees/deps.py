@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from src.application.employees import interactors
 from src.infrastructure.common.resources import LifespanState
-from src.presentation.fastapi.base.dependencies import get_lifespan_state
+from src.presentation.fastapi.common.common_deps import get_lifespan_state
 
 
 def get_register_interactor(

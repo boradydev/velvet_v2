@@ -4,7 +4,7 @@ from typing import TypeVar
 import inflection
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.core.timezone import get_now
+from src.core.timezone import get_timestamp
 
 
 class BaseSchemaOrigin(BaseModel):
@@ -29,7 +29,7 @@ class Meta(BaseSchema):
         timestamp: Время формирования ответа в формате UTC.
     """
 
-    timestamp: datetime = Field(default_factory=get_now)
+    timestamp: datetime = Field(default_factory=get_timestamp)
 
 
 DataType = TypeVar("DataType", bound=BaseSchema)
