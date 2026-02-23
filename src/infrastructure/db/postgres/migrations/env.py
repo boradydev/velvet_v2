@@ -7,7 +7,7 @@ from sqlalchemy import engine_from_config, pool
 
 sys.path.append(str(Path(__file__).resolve().parents[5]))
 
-from src.infrastructure.db.postgres.models.base import BaseModel
+from src.infrastructure.db.postgres.models.common import BaseModel
 from src.infrastructure.db.postgres.settings import postgres_settings
 
 config = context.config

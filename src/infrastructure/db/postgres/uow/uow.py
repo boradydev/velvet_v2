@@ -4,8 +4,9 @@ from typing import Any, Self, cast
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.application.base.interfaces import IEventPublisher
-from src.domain.employees.interfaces import IEmployeeRepository, IEmployeeUOW
-from src.infrastructure.db.postgres.uow.base import IPostgresUOW
+from src.domain.employees.interfaces.uow_abc import IEmployeeUOW
+from src.domain.employees.interfaces.repos.db_abc import IEmployeeRepository
+from src.infrastructure.db.postgres.uow.common import IPostgresUOW
 
 
 class EmployeeUOW(IPostgresUOW, IEmployeeUOW):

@@ -2,16 +2,18 @@ from collections.abc import Callable
 from typing import Any
 
 from src.application.base.interfaces import IEventPublisher
-from src.application.employees.interfaces import IEmployeeInteractorFactory
-from src.application.services.code import IConfirmationCodeService
-from src.application.services.logger import ILogger
-from src.application.services.send import IEmailService
-from src.application.services.token import ITokenService
-from src.domain.employees.interfaces import IPasswordService
-from src.infrastructure.factories.interactors.employees import EmployeeInteractorFactory
+from src.application.employees.interfaces import IEmployeeUseCaseFactory
+from src.domain.common.interfaces.services_abc import (
+    IConfirmationCodeService,
+    IEmailService,
+    ILogger,
+    IPasswordService,
+    ITokenService,
+)
+from src.infrastructure.factories.cases.employees import EmployeeUseCaseFactory
 
 
-class InteractorResources:
+class UseCaseResources:
     """Корень композиции (Composition Root)."""
 
     def __init__(
@@ -32,7 +34,7 @@ class InteractorResources:
         self._logger = logger
         self._event_publisher = event_publisher
 
-        self.employees: IEmployeeInteractorFactory = EmployeeInteractorFactory(self)
+        self.employees: IEmployeeUseCaseFactory = EmployeeUseCaseFactory(self)
 
     @property
     def session_factory(self) -> Callable[[], Any]:

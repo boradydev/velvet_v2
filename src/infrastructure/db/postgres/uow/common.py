@@ -5,7 +5,7 @@ from typing import Self
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.application.base.interfaces import IEventPublisher
-from src.domain.base.events import BaseDomainEvent
+from src.domain.common.events import BaseDomainEvent
 
 
 class IPostgresUOW(ABC):
