@@ -2,11 +2,11 @@ from collections.abc import Mapping
 from types import MappingProxyType
 
 from src.core.exceptions import BaseAppException
-from src.domain.employees.exceptions import (
+from src.domain.employees.excs import (
     EmailNotFoundException,
     InvalidPasswordException,
 )
-from src.presentation.fastapi.base.types import Resp
+from src.presentation.fastapi.common.types import Resp
 
 
 EMPLOYEE_EXCEPTION_MAP: Mapping[type[BaseAppException], Resp] = MappingProxyType(
