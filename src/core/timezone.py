@@ -1,6 +1,11 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from typing import NewType
 
 
-def get_now() -> datetime:
-    """Глобальный провайдер времени UTC."""
-    return datetime.now(UTC)
+Timestamp = NewType("Timestamp", datetime)
+Timedelta = NewType("Timedelta", timedelta)
+
+
+def get_timestamp() -> Timestamp:
+    """Единая точка получения текущего времени UTC."""
+    return Timestamp(datetime.now(UTC))
