@@ -1,6 +1,6 @@
 from redis import Redis
 
-from src.application.employees.repositories import IConfirmationCodeRepository
+from src.domain.employees.interfaces.repos.cache_abc import IConfirmationCodeRepository
 
 
 class RedisConfirmationCodeRepository(IConfirmationCodeRepository):

@@ -1,10 +1,10 @@
-from src.application.employees import interactors
-from src.application.employees.interfaces import IEmployeeInteractorResources
+from src.application.employees import cases
+from src.application.employees.interfaces import IEmployeeUseCaseResources
 from src.infrastructure.db.postgres.repositories.employees import EmployeeRepository
 from src.infrastructure.db.postgres.uow.uow import EmployeeUOW
 
 
-class EmployeeInteractorFactory:
+class EmployeeUseCaseFactory:
     """
     Фабрика интеракторов для домена сотрудников.
 
@@ -19,9 +19,9 @@ class EmployeeInteractorFactory:
         точка, где инфраструктура ДБ «протекает» в логику сборки.
     """
 
-    resources: IEmployeeInteractorResources
+    resources: IEmployeeUseCaseResources
 
-    def __init__(self, resources: IEmployeeInteractorResources) -> None:
+    def __init__(self, resources: IEmployeeUseCaseResources) -> None:
         """
         Инициализирует фабрику через внедрение зависимости.
 
@@ -31,7 +31,7 @@ class EmployeeInteractorFactory:
         """
         self.resources = resources
 
-    def create_register_interactor(self) -> interactors.RegisterInteractor:
+    def create_register_case(self) -> cases.Register:
         """Создает сценарий регистрации нового сотрудника."""
         uow = EmployeeUOW(
             session_factory=self.resources.session_factory,
@@ -39,20 +39,20 @@ class EmployeeInteractorFactory:
             event_publisher=self.resources.event_publisher,
         )
 
-        return interactors.RegisterInteractor(
+        return cases.Register(
             uow=uow,
             password_service=self.resources.password_service,
             logger=self.resources.logger,
         )
 
-    def create_login_interactor(self) -> interactors.LoginInteractor:
+    def create_login_case(self) -> cases.Login:
         """Создает сценарий аутентификации сотрудника."""
         uow = EmployeeUOW(
             session_factory=self.resources.session_factory,
             employee_repo_class=EmployeeRepository,
             event_publisher=self.resources.event_publisher,
         )
-        return interactors.LoginInteractor(
+        return cases.Login(
             uow=uow,
             token_service=self.resources.token_service,
             password_service=self.resources.password_service,

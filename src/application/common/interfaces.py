@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.domain.base.events import BaseDomainEvent
+from src.domain.common.events import BaseDomainEvent
 
 
 class IEventPublisher(ABC):
