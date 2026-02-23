@@ -1,26 +1,28 @@
 from collections.abc import Callable
 from typing import Any, Protocol
 
-from src.application.base.interfaces import IEventPublisher
-from src.application.employees import interactors
-from src.application.services.logger import ILogger
-from src.application.services.token import ITokenService
-from src.domain.employees.interfaces import IPasswordService
+from src.application.common.interfaces import IEventPublisher
+from src.application.employees import cases
+from src.domain.common.interfaces.services_abc import (
+    ILogger,
+    IPasswordService,
+    ITokenService,
+)
 
 
-class IEmployeeInteractorFactory(Protocol):
+class IEmployeeUseCaseFactory(Protocol):
     """Интерфейс фабрики интеракторов домена "Сотрудники" (Employees)."""
 
-    def create_register_interactor(self) -> interactors.RegisterInteractor:
-        """Создает сценарий регистрации нового сотрудника."""
-        ...
+    def create_register_case(self) -> cases.Register: ...
 
-    def create_login_interactor(self) -> interactors.LoginInteractor:
-        """Создает сценарий аутентификации сотрудника."""
-        ...
+    def create_confirm_register_case(self) -> cases.ConfirmRegister: ...
+
+    def create_login_case(self) -> cases.Login: ...
+
+    def create_resend_case(self) -> cases.ReSendCodeConfirmation: ...
 
 
-class IEmployeeInteractorResources(Protocol):
+class IEmployeeUseCaseResources(Protocol):
     """Контракт ресурсов (БД, сервисы) для сборки интеракторов (Employees)."""
 
     @property
@@ -47,5 +49,3 @@ class IEmployeeInteractorResources(Protocol):
     def logger(self) -> ILogger:
         """Логгер."""
         ...
-
-
