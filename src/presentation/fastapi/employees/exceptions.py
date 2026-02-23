@@ -1,4 +1,4 @@
-from src.presentation.fastapi.base import exceptions
+from src.presentation.fastapi.common import exceptions
 
 
 class ValidationPasswordHTTPException(exceptions.ValidationHTTPException):
