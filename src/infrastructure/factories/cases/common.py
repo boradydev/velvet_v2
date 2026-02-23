@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
-from src.application.base.interfaces import IEventPublisher
+from src.application.common.interfaces import IEventPublisher
 from src.application.employees.interfaces import IEmployeeUseCaseFactory
 from src.domain.common.interfaces.services_abc import (
     IConfirmationCodeService,

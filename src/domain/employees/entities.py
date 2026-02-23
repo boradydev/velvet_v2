@@ -3,21 +3,32 @@ from typing import Self
 
 from uuid6 import UUID, uuid7
 
-from src.domain.base.entities import BaseEntity
-from src.domain.employees import value_objects
+from src.core.timezone import Timestamp, get_timestamp
+from src.domain.common.entities import BaseEntity
+from src.domain.common.interfaces.services_abc import IPasswordService
+from src.domain.employees import excs
 from src.domain.employees.events import EmployeeRegisteredEvent
-from src.domain.employees.exceptions import PermissionDeniedException
+from src.domain.employees.excs import PermissionDeniedException
+from src.domain.employees.vals import (
+    Email,
+    PasswordHash,
+    Permission,
+    RoleName,
+    SystemRoles,
+)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Employee(BaseEntity):
     id: UUID
-    email: value_objects.Email
-    password_hash: value_objects.PasswordHash
+    email: Email
+    _password_hash: PasswordHash
     is_active: bool
     is_verified: bool
-    role: value_objects.EmployeeRole
-    permissions: set[str]
+    has_roles: set[RoleName]
+    available_roles: set[RoleName]
+    permissions: set[Permission]
+    created_at: Timestamp
 
     def deactivate(self):
         self.is_active = False
@@ -25,50 +36,53 @@ class Employee(BaseEntity):
     def verify(self):
         self.is_verified = True
 
-    def promote_to_manager(self):
-        self.role = value_objects.EmployeeRole.MANAGER
+    def check_password(
+        self,
+        password: str,
+        password_service: IPasswordService,
+    ) -> bool:
+        if not password_service.verify_password(password, self._password_hash.value):
+            raise excs.InvalidCredentialsException
+        return True
 
-    def demote_to_saler(self):
-        self.role = value_objects.EmployeeRole.SALER
+    @property
+    def is_owner(self) -> bool:
+        return SystemRoles.OWNER in self.has_roles
 
-    def has_permission(self, permission: value_objects.Permission) -> bool:
-        if self.role == value_objects.EmployeeRole.OWNER:
+    def add_role(self, role: RoleName) -> None:
+        if not (self.is_owner or Permission.MANAGE_ROLES in self.permissions):
+            raise PermissionDeniedException
+        self.available_roles.add(role)
+
+    def has_permission(self, permission: Permission) -> bool:
+        if self.is_owner:
             return True
         return permission in self.permissions
 
-    def grant_permission(self, permission: value_objects.Permission):
-        self.permissions.add(permission)
-
-    def revoke_permission(self, permission: value_objects.Permission):
-        if permission in self.permissions:
-            self.permissions.remove(permission)
-
-    def _ensure_can_perform(self, permission: value_objects.Permission):
-        if self.role == value_objects.EmployeeRole.OWNER:
+    def _ensure_can_perform(self, permission: Permission):
+        if self.is_owner:
             return
         if permission not in self.permissions:
             raise PermissionDeniedException
 
     @classmethod
-    def register(cls, email: str, password_hash: str) -> Self:
+    def register(cls, email: Email, password_hash: str) -> Self:
         """Фабричный метод, регистрация нового сотрудника."""
         employee = cls(
             id=uuid7(),
-            email=value_objects.Email(email),
-            password_hash=value_objects.PasswordHash(password_hash),
+            email=email,
+            _password_hash=PasswordHash(password_hash),
             is_active=True,
             is_verified=False,
-            role=value_objects.EmployeeRole.SALER,
-            permissions={
-                value_objects.Permission.VIEW_PRODUCTS,
-                value_objects.Permission.SALE,
-                value_objects.Permission.SALE_RETURN,
-            },
+            has_roles=set(),
+            available_roles=set(),
+            permissions=set(),
+            created_at=get_timestamp(),
         )
-
         employee._add_event(
             EmployeeRegisteredEvent(
                 employee_id=employee.id,
-                email=str(employee.email)
+                email=employee.email,
             )
         )
+        return employee

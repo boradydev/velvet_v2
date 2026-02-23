@@ -1,4 +1,4 @@
-from src.application.employees.dto import ResendCodeEmployeeDTO
+from src.application.employees.dtos import ResendCodeEmployeeDTO
 from src.infrastructure.tasks.task_iq.tasks.broker import tasks_broker
 
 

@@ -2,10 +2,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.application.employees.dto import CredentialsEmployeeDTO
-from src.application.employees.exceptions import EmployeeAlreadyExistsException
-from src.application.employees.interactors import RegisterInteractor
-from src.domain.employees.value_objects import Email
+from src.application.employees.dtos import CredentialsEmployeeDTO
+from src.application.employees.excs import EmployeeAlreadyExistsException
+from src.application.employees.cases import Register
+from src.domain.employees.vals import Email
 
 
 @pytest.mark.parametrize(
@@ -31,7 +31,7 @@ async def test_register_success(test_password):
     pass_service.hashing_password.return_value = "hashed_secret"
     code_service.create_code.return_value = confirm_code
 
-    interactor = RegisterInteractor(
+    interactor = Register(
         uow=uow,
         password_service=pass_service,
         confirmation_code_service=code_service,
@@ -66,7 +66,7 @@ async def test_register_unsuccess():
     pass_service.hashing_password.return_value = "hashed_secret"
     code_service.create_code.return_value = confirm_code
 
-    interactor = RegisterInteractor(
+    interactor = Register(
         uow=uow,
         password_service=pass_service,
         confirmation_code_service=code_service,

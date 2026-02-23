@@ -2,10 +2,11 @@ from dataclasses import dataclass
 
 from uuid6 import UUID
 
-from src.domain.base.events import BaseDomainEvent
+from src.domain.common.events import BaseDomainEvent
+from src.domain.employees.vals import Email
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class EmployeeRegisteredEvent(BaseDomainEvent):
     employee_id: UUID
-    email: str
+    email: Email

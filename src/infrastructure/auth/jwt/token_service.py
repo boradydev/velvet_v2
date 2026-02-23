@@ -3,8 +3,8 @@ from typing import Any
 
 import jwt
 
-from src.application.employees.dto import AccessTokenPayload, RefreshTokenPayload
-from src.application.services.token import ITokenService
+from src.application.employees.dtos import AccessTokenPayload, RefreshTokenPayload
+from src.domain.common.interfaces.services_abc import ITokenService
 from src.infrastructure.auth.jwt import exceptions
 from src.infrastructure.auth.jwt.settings import JwtSettings
 

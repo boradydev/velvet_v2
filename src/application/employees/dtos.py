@@ -2,15 +2,22 @@ from dataclasses import dataclass
 
 from uuid6 import UUID
 
-from src.application.employees.exceptions import ConfirmationCodeActiveException
+from src.application.employees.excs import ConfirmationCodeActiveException
 from src.core.timezone import Timestamp
-from src.domain.employees.value_objects import ConfirmationCode, Email
+from src.domain.employees.vals import ConfirmationCode, Email
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CredentialsEmployeeDTO:
     email: Email
     password: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class LoginCredentialsEmployeeDTO:
+    email: Email
+    password: str
+    device_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

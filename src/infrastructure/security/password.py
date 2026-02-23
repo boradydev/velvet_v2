@@ -1,6 +1,6 @@
 from passlib.context import CryptContext
 
-from src.domain.employees.interfaces import IPasswordService
+from src.domain.common.interfaces.services_abc import IPasswordService
 
 
 class PasswordService(IPasswordService):

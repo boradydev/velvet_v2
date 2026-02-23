@@ -4,7 +4,7 @@ from typing import Self
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.application.base.interfaces import IEventPublisher
+from src.application.common.interfaces import IEventPublisher
 from src.domain.common.events import BaseDomainEvent
 
 

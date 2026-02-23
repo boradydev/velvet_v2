@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from uuid6 import UUID
 
-from src.domain.auth_sessions.entitity import AuthSession
+from src.domain.auth_sessions.entity import AuthSession
 from src.domain.employees.entities import Employee
 from src.domain.employees.vals import Email
 

@@ -4,8 +4,8 @@ from dataclasses import asdict
 
 import aio_pika
 
-from src.application.base.interfaces import IEventPublisher
-from src.domain.base.events import BaseDomainEvent
+from src.application.common.interfaces import IEventPublisher
+from src.domain.common.events import BaseDomainEvent
 from src.infrastructure.message_brokers.rabbit_mq.exceptions import RabbitMQConnectionException
 
 

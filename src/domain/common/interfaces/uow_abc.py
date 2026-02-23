@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from types import TracebackType
 from typing import Self
 
-from src.application.base.interfaces import IEventPublisher
+from src.application.common.interfaces import IEventPublisher
 from src.domain.common.events import BaseDomainEvent
 
 

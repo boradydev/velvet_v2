@@ -1,5 +1,5 @@
 from src.core.paths import PROJECT_DIR
-from src.presentation.fastapi.base.descriptions import registry
+from src.presentation.fastapi.common.descriptions import registry
 
 
 template_factory = registry.DocsTemplateFactory(

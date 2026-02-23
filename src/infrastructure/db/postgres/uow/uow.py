@@ -3,7 +3,7 @@ from typing import Any, Self, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.application.base.interfaces import IEventPublisher
+from src.application.common.interfaces import IEventPublisher
 from src.domain.employees.interfaces.uow_abc import IEmployeeUOW
 from src.domain.employees.interfaces.repos.db_abc import IEmployeeRepository
 from src.infrastructure.db.postgres.uow.common import IPostgresUOW
