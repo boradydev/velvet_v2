@@ -2,11 +2,11 @@ from dataclasses import dataclass, field
 
 from taskiq_aio_pika import AioPikaBroker
 
-from src.application.services.logger import ILogger
 from src.core.settings.app import AppSettings
+from src.domain.common.interfaces.services_abc import ILogger
 from src.infrastructure.auth.jwt.settings import JwtSettings
 from src.infrastructure.db.postgres.settings import PostgresSettings
-from src.infrastructure.factories.interactors.base import InteractorResources
+from src.infrastructure.factories.cases.common import UseCaseResources
 from src.infrastructure.message_brokers.rabbit_mq.settings import EventPublisherSettings
 from src.infrastructure.security.settings import PasswordSettings
 from src.infrastructure.tasks.task_iq.settings import (
@@ -36,5 +36,5 @@ class AppState:
 
 @dataclass(frozen=True, slots=True)
 class LifespanState:
-    interactors: InteractorResources
+    cases: UseCaseResources
     tasks_broker: AioPikaBroker

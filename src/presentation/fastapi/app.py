@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from src.core.exceptions import BaseAppException
 from src.core.logger import get_logger
 from src.infrastructure.common.resources import AppState, Settings
-from src.presentation.fastapi.base import handlers, routers
+from src.presentation.fastapi.common import handlers, routers
 from src.presentation.fastapi.employees.handlers import EMPLOYEE_EXCEPTION_MAP
 from src.presentation.fastapi.lifespan import lifespan
 

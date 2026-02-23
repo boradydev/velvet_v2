@@ -6,7 +6,7 @@ from src.infrastructure.auth.jwt.token_service import JwtTokensService
 from src.infrastructure.common.resources import AppState, LifespanState
 from src.infrastructure.db.postgres.database import Postgres
 from src.infrastructure.email.smtp import EmailService
-from src.infrastructure.factories.interactors.base import InteractorResources
+from src.infrastructure.factories.cases.common import UseCaseResources
 from src.infrastructure.message_brokers.rabbit_mq.publisher import RabbitMQPublisher
 from src.infrastructure.security.codes import ConfirmCodeService
 from src.infrastructure.security.password import PasswordService
@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
         url=settings.event_publisher.AMQP_URL,
         exchange_name=settings.event_publisher.EVENT_BROKER_EXCHANGE,
     )
-    interactor_resources = InteractorResources(
+    interactor_resources = UseCaseResources(
         session_factory=postgres.session_factory,
         token_service=JwtTokensService(settings.jwt),
         password_service=PasswordService(settings.password.DEFAULT_CONTEXT),
@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
         event_publisher=event_publisher,
     )
     app.state.lifespan_state = LifespanState(
-        interactors=interactor_resources,
+        cases=interactor_resources,
         tasks_broker=tasks_broker,
     )
     yield
