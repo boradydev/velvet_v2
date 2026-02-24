@@ -41,8 +41,8 @@ class ConfirmationCode:
     _LENGTH: Final = 6
 
     def __post_init__(self):
-        if len(self.value) == self._LENGTH:
-            raise excs.InvalidPasswordHashException
+        if not len(self.value) == self._LENGTH:
+            raise excs.InvalidConfirmationCodeException
 
     def __str__(self) -> str:
         return self.value
