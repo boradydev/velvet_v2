@@ -1,8 +1,10 @@
+from collections.abc import Callable
+
 from uuid6 import UUID
 
 from src.application.employees import dtos, excs
 from src.application.employees.services import IEmployeeTasksService
-from src.core.timezone import Timedelta, Timestamp, get_timestamp
+from src.core.timezone import Timedelta, Timestamp
 from src.domain.auth_sessions.entity import AuthSession
 from src.domain.common.interfaces import services_abc
 from src.domain.employees.entities import Employee
@@ -12,21 +14,20 @@ from src.domain.employees.vals import Email
 
 
 class Register:
-    uow: uow_abc.IEmployeeUOW
-    password_service: services_abc.IPasswordService
-    logger: services_abc.ILogger
-
     def __init__(
         self,
         uow: uow_abc.IEmployeeUOW,
         password_service: services_abc.IPasswordService,
+        get_now: Callable[[], Timestamp],
         logger: services_abc.ILogger,
-    ):
+    ) -> None:
         self.uow = uow
         self.password_service = password_service
         self.logger = logger
+        self.get_now = get_now
 
     async def execute(self, dto: dtos.CredentialsEmployeeDTO) -> None:
+        timestamp = self.get_now()
         password_hash = self.password_service.hashing_password(dto.password)
         async with self.uow as db:
             if await db.employees.exists_by_email(dto.email):
@@ -35,6 +36,7 @@ class Register:
             employee = Employee.register(
                 email=dto.email,
                 password_hash=password_hash,
+                timestamp=timestamp,
             )
             await db.employees.save(employee)
             await db.commit(events=employee.pull_events())
@@ -47,21 +49,24 @@ class SendRegisterConfirmation:
         code_ttl: int,
         email_service: services_abc.IEmailService,
         code_service: services_abc.IConfirmationCodeService,
+        get_now: Callable[[], Timestamp],
         resend_cooldown: Timedelta,
     ) -> None:
         self.code_repo = code_repo
         self.code_ttl = code_ttl
         self.email_service = email_service
         self.code_service = code_service
+        self.get_now = get_now
         self.resend_cooldown = resend_cooldown
 
     async def execute(self, dto: dtos.SendConfirmationDTO) -> None:
+        timestamp = self.get_now()
         code = self.code_service.create_code()
         confirmation = dtos.ConfirmationEmployeeDTO(
             employee_id=dto.employee_id,
             email=dto.email,
             code=code,
-            cooldown=get_timestamp() + self.resend_cooldown,
+            cooldown=timestamp + self.resend_cooldown,
         )
         await self.code_repo.save(
             email=dto.email,
@@ -80,23 +85,37 @@ class ReSendCodeConfirmation:
         uow: uow_abc.IEmployeeUOW,
         code_repo: cache_abc.IConfirmationCodeRepository,
         task_service: IEmployeeTasksService,
+        get_now: Callable[[], Timestamp],
     ) -> None:
         self.uow = uow
         self.code_repo = code_repo
         self.task_service = task_service
+        self.get_now = get_now
 
     async def execute(self, dto: dtos.ResendCodeEmployeeDTO) -> None:
-        employee_id = await self._resolve_employee_id(dto.email)
+        timestamp = self.get_now()
+        employee_id = await self._resolve_employee_id(
+            email=dto.email,
+            timestamp=timestamp,
+        )
         send_confirmation = dtos.SendConfirmationDTO(
             employee_id=employee_id,
             email=dto.email,
         )
         await self.task_service.send_by_email(send_confirmation)
 
-    async def _resolve_employee_id(self, email: Email) -> UUID:
+    async def _resolve_employee_id(
+        self,
+        *,
+        email: Email,
+        timestamp: Timestamp,
+    ) -> UUID:
         confirmation = await self.code_repo.get_by_email(email)
         if confirmation:
-            self._ensure_cooldown_passed(confirmation.cooldown)
+            self._ensure_cooldown_passed(
+                timestamp=timestamp,
+                cooldown=confirmation.cooldown,
+            )
             return confirmation.employee_id
 
         async with self.uow as db:
@@ -107,8 +126,13 @@ class ReSendCodeConfirmation:
 
         return employee_id
 
-    def _ensure_cooldown_passed(self, cooldown: Timestamp) -> None:
-        if cooldown > get_timestamp():
+    @staticmethod
+    def _ensure_cooldown_passed(
+        *,
+        timestamp: Timestamp,
+        cooldown: Timestamp,
+    ) -> None:
+        if cooldown > timestamp:
             raise excs.ConfirmationCodeActiveException
 
 
@@ -118,14 +142,17 @@ class ConfirmRegister:
         uow: uow_abc.IEmployeeUOW,
         code_repo: cache_abc.IConfirmationCodeRepository,
         token_service: services_abc.ITokenService,
+        get_now: Callable[[], Timestamp],
         session_expires_delta: Timedelta,
     ) -> None:
         self.uow = uow
         self.code_repo = code_repo
         self.token_service = token_service
+        self.get_now = get_now
         self.session_expires_delta = session_expires_delta
 
     async def execute(self, dto: dtos.ConfirmRegisterDTO) -> dtos.AuthTokensDTO:
+        timestamp = self.get_now()
         employee_id = await self._ensure_confirmation_code_valid(dto)
         auth_session = AuthSession.create(
             employee_id=employee_id,
@@ -133,6 +160,7 @@ class ConfirmRegister:
                 employee_id=employee_id,
             ),
             expires_delta=self.session_expires_delta,
+            timestamp=timestamp,
         )
         async with self.uow as db:
             await db.auth_sessions.save(auth_session)
@@ -165,17 +193,20 @@ class Login:
         uow: uow_abc.IEmployeeUOW,
         password_service: services_abc.IPasswordService,
         logger: services_abc.ILogger,
+        get_now: Callable[[], Timestamp],
         session_expires_delta: Timedelta,
     ):
         self.uow = uow
         self.token_service = token_service
         self.password_service = password_service
         self.logger = logger
+        self.get_now = get_now
         self.session_expires_delta = session_expires_delta
 
     async def execute(
         self, dto: dtos.LoginCredentialsEmployeeDTO
     ) -> dtos.AuthTokensDTO:
+        timestamp = self.get_now()
         async with self.uow as db:
             employee = await db.employees.get_by_email(dto.email)
             if not employee:
@@ -193,10 +224,14 @@ class Login:
                 if not auth_session:
                     auth_session = self._create_auth_session(
                         employee_id=employee.id,
+                        timestamp=timestamp,
                         device_id=dto.device_id,
                     )
             else:
-                auth_session = self._create_auth_session(employee_id=employee.id)
+                auth_session = self._create_auth_session(
+                    employee_id=employee.id,
+                    timestamp=timestamp,
+                )
 
             self._update_refresh_token(auth_session)
             await db.auth_sessions.save(auth_session)
@@ -212,6 +247,8 @@ class Login:
 
     def _create_auth_session(
         self,
+        *,
+        timestamp: Timestamp,
         employee_id: UUID,
         device_id: UUID | None = None,
     ) -> AuthSession:
@@ -219,6 +256,7 @@ class Login:
             employee_id=employee_id,
             expires_delta=self.session_expires_delta,
             device_id=device_id,
+            timestamp=timestamp,
         )
 
     def _update_refresh_token(self, auth_session: AuthSession) -> None:

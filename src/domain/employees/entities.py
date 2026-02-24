@@ -3,7 +3,7 @@ from typing import Self
 
 from uuid6 import UUID, uuid7
 
-from src.core.timezone import Timestamp, get_timestamp
+from src.core.timezone import Timestamp
 from src.domain.common.entities import BaseEntity
 from src.domain.common.interfaces.services_abc import IPasswordService
 from src.domain.employees import excs
@@ -66,7 +66,12 @@ class Employee(BaseEntity):
             raise PermissionDeniedException
 
     @classmethod
-    def register(cls, email: Email, password_hash: str) -> Self:
+    def register(
+        cls,
+        email: Email,
+        password_hash: str,
+        timestamp: Timestamp,
+    ) -> Self:
         """Фабричный метод, регистрация нового сотрудника."""
         employee = cls(
             id=uuid7(),
@@ -77,12 +82,13 @@ class Employee(BaseEntity):
             has_roles=set(),
             available_roles=set(),
             permissions=set(),
-            created_at=get_timestamp(),
+            created_at=timestamp,
         )
         employee._add_event(
             EmployeeRegisteredEvent(
                 employee_id=employee.id,
                 email=employee.email,
+                timestamp=timestamp,
             )
         )
         return employee

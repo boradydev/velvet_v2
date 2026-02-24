@@ -1,11 +1,10 @@
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass
 
-from src.core.timezone import get_timestamp
+from src.core.timezone import Timestamp
 
 
 @dataclass(kw_only=True, frozen=True)
 class BaseDomainEvent:
     """Базовый класс для всех событий домена."""
 
-    timestamp: datetime = field(default_factory=get_timestamp)
+    timestamp: Timestamp

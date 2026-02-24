@@ -3,7 +3,7 @@ from typing import Self
 
 from uuid6 import UUID, uuid7
 
-from src.core.timezone import Timedelta, Timestamp, get_timestamp
+from src.core.timezone import Timedelta, Timestamp
 from src.domain.auth_sessions import events, excs, vals
 from src.domain.common.entities import BaseEntity
 
@@ -19,14 +19,15 @@ class AuthSession(BaseEntity):
     user_agent: vals.UserAgent | None
     ip_address: vals.IpAddress | None
 
-    def is_expired(self) -> bool:
-        return get_timestamp() > self.expires_at
+    def is_expired(self, timestamp: Timestamp) -> bool:
+        return timestamp > self.expires_at
 
     @classmethod
     def create(
         cls,
         *,
         employee_id: UUID,
+        timestamp: Timestamp,
         expires_delta: Timedelta,
         refresh_token: str | None = None,
         device_id: UUID | None = None,
@@ -40,8 +41,8 @@ class AuthSession(BaseEntity):
             _refresh_token=refresh_token,
             user_agent=user_agent,
             ip_address=ip_address,
-            expires_at=get_timestamp() + expires_delta,
-            created_at=get_timestamp(),
+            expires_at=timestamp + expires_delta,
+            created_at=timestamp,
         )
         if not device_id:
             auth_session._add_event(
@@ -49,6 +50,7 @@ class AuthSession(BaseEntity):
                     auth_session_id=auth_session.id,
                     device_id=auth_session.device_id,
                     employee_id=employee_id,
+                    timestamp=timestamp,
                 )
             )
 
