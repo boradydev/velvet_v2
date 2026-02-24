@@ -18,7 +18,7 @@ class BaseEntity:
 
     def pull_events(self) -> list[BaseDomainEvent]:
         """Забирает все накопленные события и очищает список."""
-        events = self._events
+        events = self._events.copy()
         self._events.clear()
         return events
 
