@@ -5,75 +5,58 @@ import pytest
 from src.application.employees.cases import Register
 from src.application.employees.dtos import CredentialsEmployeeDTO
 from src.application.employees.excs import EmployeeAlreadyExistsException
-from src.domain.employees.vals import Email
+from src.domain.employees.entities import Employee
+from src.domain.employees.vals import Email, PasswordHash
 
 
-@pytest.mark.parametrize(
-    "test_password",
-    [
-        "Qwer123$",
-        "Qwer123$124",
-    ],
-)
-async def test_register_success(test_password):
-    uow = AsyncMock()
+async def test_register_success(employee_uow):
+    uow = employee_uow
     pass_service = MagicMock()
-    code_service = MagicMock()
-    mail_service = MagicMock()
-    logger = MagicMock()
+    hashed_secret = "hashed_secret"
+    pass_service.hashing_password.return_value = hashed_secret
 
-    dto = CredentialsEmployeeDTO(email=Email("test@test.com"), password=test_password)
-    confirm_code = "123456"
-
-    uow.employees.exists_by_email.return_value = False
-    uow.__aenter__.return_value = uow
-
-    pass_service.hashing_password.return_value = "hashed_secret"
-    code_service.create_code.return_value = confirm_code
-
-    interactor = Register(
+    dto = CredentialsEmployeeDTO(email=Email("test@test.com"), password="Qwerty123$")
+    use_case = Register(
         uow=uow,
         password_service=pass_service,
-        logger=logger,
+        logger=MagicMock(),
     )
 
-    await interactor.execute(dto)
+    await use_case.execute(dto)
+    assert len(uow.employees.before_commit_employees) == 1
+    assert len(uow.employees.after_commit_employees) == 1
 
-    pass_service.hashing_password.assert_called_once_with(dto.password)
+    before_commit: Employee = uow.employees.before_commit_employees[0]
+    assert before_commit.email == dto.email
+    assert before_commit._password_hash == PasswordHash(hashed_secret)
+    assert before_commit.is_active is True
+    assert before_commit.is_verified is False
+    assert len(before_commit._events) > 0
 
-    mail_service.send.assert_called_once_with(
-        email=Email(value=dto.email), message=confirm_code
-    )
+    after_commit: Employee = uow.employees.after_commit_employees[0]
+    assert len(after_commit._events) == 0
 
-    uow.commit.assert_called_once()
+    assert uow.committed is True
+    assert len(uow.committed_events) > 0
 
 
 async def test_register_unsuccess():
     uow = AsyncMock()
     pass_service = MagicMock()
-    code_service = MagicMock()
-    mail_service = MagicMock()
     logger = MagicMock()
 
-    dto = CredentialsEmployeeDTO(email="test@test.com", password="Qwer123$")
-    confirm_code = "123456"
+    dto = CredentialsEmployeeDTO(email=Email("test@test.com"), password="Qwerty123$")
 
     uow.employees.exists_by_email.return_value = True
     uow.__aenter__.return_value = uow
 
-    pass_service.hashing_password.return_value = "hashed_secret"
-    code_service.create_code.return_value = confirm_code
-
-    interactor = Register(
+    use_case = Register(
         uow=uow,
         password_service=pass_service,
-        confirmation_code_service=code_service,
-        send_email_service=mail_service,
         logger=logger,
     )
 
     with pytest.raises(EmployeeAlreadyExistsException):
-        await interactor.execute(dto)
+        await use_case.execute(dto)
 
     uow.commit.assert_not_called()
-    mail_service.send.assert_not_called()
