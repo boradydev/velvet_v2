@@ -2,9 +2,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from src.application.employees.cases import Register
 from src.application.employees.dtos import CredentialsEmployeeDTO
 from src.application.employees.excs import EmployeeAlreadyExistsException
-from src.application.employees.cases import Register
 from src.domain.employees.vals import Email
 
 
@@ -22,7 +22,7 @@ async def test_register_success(test_password):
     mail_service = MagicMock()
     logger = MagicMock()
 
-    dto = CredentialsEmployeeDTO(email="test@test.com", password=test_password)
+    dto = CredentialsEmployeeDTO(email=Email("test@test.com"), password=test_password)
     confirm_code = "123456"
 
     uow.employees.exists_by_email.return_value = False
@@ -34,8 +34,6 @@ async def test_register_success(test_password):
     interactor = Register(
         uow=uow,
         password_service=pass_service,
-        confirmation_code_service=code_service,
-        send_email_service=mail_service,
         logger=logger,
     )
 
