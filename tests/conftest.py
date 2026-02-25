@@ -3,35 +3,48 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from tests.unit.application.employees.fake_uow import (
-    FakeConfirmationCodeRepository,
-    FakeEmployeeUOW,
-)
+from src.domain.common.interfaces import services_abc
+from src.domain.employees.interfaces.repos import db_abc
+from src.domain.employees.interfaces.uow_abc import IEmployeeUOW
+from tests.unit.application.employees import fakes
 
 
 @pytest.fixture
-def employee_uow() -> FakeEmployeeUOW:
-    return FakeEmployeeUOW()
+def fake_employee_uow() -> fakes.FakeEmployeeUOW:
+    return fakes.FakeEmployeeUOW()
 
 
 @pytest.fixture
-def fake_confirmation_code_repo() -> FakeConfirmationCodeRepository:
-    return FakeConfirmationCodeRepository()
+def mock_employee_uow() -> IEmployeeUOW | AsyncMock:
+    uow = AsyncMock(spec_set=IEmployeeUOW)
+    uow.employees = AsyncMock(spec_set=db_abc.IEmployeeRepository)
+    uow.auth_sessions = AsyncMock(spec_set=db_abc.IAuthSessionsRepository)
+    return uow
 
 
 @pytest.fixture
-def fake_email_service() -> AsyncMock:
-    return AsyncMock()
+def fake_confirmation_code_repo() -> fakes.FakeConfirmationCodeRepository:
+    return fakes.FakeConfirmationCodeRepository()
 
 
 @pytest.fixture
-def fake_code_service() -> MagicMock:
-    return MagicMock()
+def mock_email_service() -> services_abc.IEmailService | AsyncMock:
+    return AsyncMock(spec_set=services_abc.IEmailService)
 
 
 @pytest.fixture
-def fake_logger() -> MagicMock:
-    return MagicMock()
+def mock_code_service() -> services_abc.IConfirmationCodeService | MagicMock:
+    return MagicMock(spec_set=services_abc.IConfirmationCodeService)
+
+
+@pytest.fixture
+def mock_pass_service() -> services_abc.IPasswordService | MagicMock:
+    return MagicMock(spec_set=services_abc.IPasswordService)
+
+
+@pytest.fixture
+def mock_logger() -> services_abc.ILogger | MagicMock:
+    return MagicMock(spec_set=services_abc.ILogger)
 
 
 @pytest.fixture
@@ -41,6 +54,10 @@ def frozen_now():
 
 
 @pytest.fixture
-def get_now_mock(frozen_now):
+def mock_get_now(frozen_now):
     """2026-01-01 12:00:00+00:00."""
-    return lambda: frozen_now
+
+    def get_frozen_now():
+        return frozen_now
+
+    return get_frozen_now

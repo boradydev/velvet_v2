@@ -8,20 +8,23 @@ from src.domain.employees.vals import ConfirmationCode, Email
 
 
 async def test_send_confirmation_success(
-    fake_confirmation_code_repo, fake_email_service, fake_code_service, get_now_mock
+    fake_confirmation_code_repo,
+    mock_email_service,
+    mock_code_service,
+        mock_get_now,
 ) -> None:
     test_code = ConfirmationCode("123456")
     test_ttl = 300
     test_cooldown = timedelta(minutes=1)
-    fake_code_service.create_code.return_value = test_code
+    mock_code_service.create_code.return_value = test_code
 
     use_case = SendRegisterConfirmation(
         code_repo=fake_confirmation_code_repo,
         code_ttl=test_ttl,
-        email_service=fake_email_service,
-        code_service=fake_code_service,
+        email_service=mock_email_service,
+        code_service=mock_code_service,
         resend_cooldown=test_cooldown,
-        get_now=get_now_mock,
+        get_now=mock_get_now,
     )
 
     dto = SendConfirmationDTO(
@@ -40,10 +43,10 @@ async def test_send_confirmation_success(
     assert saved_dto.employee_id == dto.employee_id
     assert saved_dto.code == test_code
 
-    assert saved_dto.cooldown > get_now_mock()
-    assert saved_dto.cooldown == get_now_mock() + test_cooldown
+    assert saved_dto.cooldown > mock_get_now()
+    assert saved_dto.cooldown == mock_get_now() + test_cooldown
 
-    fake_email_service.send.assert_awaited_once_with(
+    mock_email_service.send.assert_awaited_once_with(
         email=dto.email, message=str(test_code)
     )
-    fake_code_service.create_code.assert_called_once()
+    mock_code_service.create_code.assert_called_once()

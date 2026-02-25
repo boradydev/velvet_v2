@@ -7,7 +7,10 @@ from src.application.employees.dtos import ConfirmationEmployeeDTO
 from src.domain.common.events import BaseDomainEvent
 from src.domain.employees.entities import Employee
 from src.domain.employees.interfaces.repos.cache_abc import IConfirmationCodeRepository
-from src.domain.employees.interfaces.repos.db_abc import IEmployeeRepository
+from src.domain.employees.interfaces.repos.db_abc import (
+    IAuthSessionsRepository,
+    IEmployeeRepository,
+)
 from src.domain.employees.interfaces.uow_abc import IEmployeeUOW
 from src.domain.employees.vals import Email
 
@@ -38,12 +41,18 @@ class FakeEmployeeRepository(IEmployeeRepository):
 
 
 class FakeEmployeeUOW(IEmployeeUOW):
-    employees: FakeEmployeeRepository
-
     def __init__(self):
-        self.employees = FakeEmployeeRepository()  # type: ignore
+        self._employees = FakeEmployeeRepository()  # type: ignore
         self.committed = False
         self.committed_events = []
+
+    @property
+    def employees(self) -> IEmployeeRepository:
+        return self._employees
+
+    @property
+    def auth_sessions(self) -> IAuthSessionsRepository:
+        raise NotImplementedError
 
     async def commit(self, events: list[BaseDomainEvent] | None = None):
         self.committed = True
