@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -7,6 +9,14 @@ from src.application.employees.dtos import CredentialsEmployeeDTO
 from src.application.employees.excs import EmployeeAlreadyExistsException
 from src.domain.employees.entities import Employee
 from src.domain.employees.vals import Email, PasswordHash
+from tests.unit.application.employees.fake_uow import FakeEmployeeUOW, \
+    FakeEmployeeRepository
+
+timestamp = datetime(year=2026, month=1, day=1, hour=12, minute=0, second=0)
+
+
+def get_now():
+    return timestamp
 
 
 async def test_register_success(employee_uow):
@@ -17,9 +27,7 @@ async def test_register_success(employee_uow):
 
     dto = CredentialsEmployeeDTO(email=Email("test@test.com"), password="Qwerty123$")
     use_case = Register(
-        uow=uow,
-        password_service=pass_service,
-        logger=MagicMock(),
+        uow=uow, password_service=pass_service, logger=MagicMock(), get_now=get_now
     )
 
     await use_case.execute(dto)
@@ -54,6 +62,7 @@ async def test_register_unsuccess():
         uow=uow,
         password_service=pass_service,
         logger=logger,
+        get_now=get_now,
     )
 
     with pytest.raises(EmployeeAlreadyExistsException):
