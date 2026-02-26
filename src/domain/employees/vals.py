@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Final
+from typing import ClassVar, Final
 
 from src.domain.employees import excs
 
@@ -24,11 +24,13 @@ class Email:
 
     value: str
 
-    _PATTERN: Final = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+    PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(
+        r"^[^\s@]+@[^\s@]+\.[^\s@]+$"
+    )
 
     def __post_init__(self):
         object.__setattr__(self, "value", self.value.strip().lower())
-        if not self._PATTERN.match(self.value):
+        if not self.PATTERN.match(self.value):
             raise excs.InvalidEmailException
 
     def __str__(self) -> str:
@@ -36,12 +38,49 @@ class Email:
 
 
 @dataclass(frozen=True, slots=True)
-class ConfirmationCode:
-    value: str
-    _LENGTH: Final = 6
+class Password:
+    r"""
+    Валидирует сложность пароля.
+
+    Использует флаг re.DOTALL: точка (.) совпадает с любым символом, включая \n.
+
+    ``^`` - начало строки.
+
+    ``(?=.*[A-Z])`` - проверка (lookahead) наличия хотя бы одной заглавной буквы.
+
+    ``(?=.*[a-z])`` - проверка наличия хотя бы одной строчной буквы.
+
+    ``(?=.*[0-9])`` - проверка наличия хотя бы одной цифры.
+
+    ``(?=.*[!@#$%^&*(),.?":{}|<>])`` - проверка наличия минимум одного спецсимвола.
+
+    ``.+$`` - пароль должен содержать минимум один любой символ до конца строки.
+    """
+
+    value: str = field(repr=False)
+
+    MIN_LEN: ClassVar[int] = 8
+    PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(
+        r"^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?\":{}|<>]).+$",
+        re.DOTALL,
+    )
 
     def __post_init__(self):
-        if not len(self.value) == self._LENGTH:
+        if len(self.value) < self.MIN_LEN:
+            raise excs.InvalidPasswordException
+
+        if not self.PATTERN.match(self.value):
+            raise excs.InvalidPasswordException
+
+
+@dataclass(frozen=True, slots=True)
+class ConfirmationCode:
+    value: str
+
+    PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^\d{6}$")
+
+    def __post_init__(self):
+        if not self.PATTERN.match(self.value):
             raise excs.InvalidConfirmationCodeException
 
     def __str__(self) -> str:
@@ -51,10 +90,18 @@ class ConfirmationCode:
 @dataclass(frozen=True, slots=True)
 class PasswordHash:
     value: str = field(repr=False)
-    _MIN_LENGTH: Final = 8
+
+    MIN_LEN: ClassVar[Final[int]] = 30
+    PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^\$.+$")
 
     def __post_init__(self):
-        if len(self.value) < self._MIN_LENGTH:
+        if len(self.value) < self.MIN_LEN:
+            raise excs.InvalidPasswordHashException
+
+        if not self.PATTERN.match(self.value):
+            raise excs.InvalidPasswordHashException
+
+        if " " in self.value:
             raise excs.InvalidPasswordHashException
 
 
@@ -70,17 +117,22 @@ class RoleName:
 
     ``[a-z0-9_]*`` - далее любые латинские буквы, цифры или подчеркивание
 
+    ``{2,19}`` - от 3 до 20 символов
+
     ``$`` - до конца строки
     """
 
     value: str
 
-    _MAX_LENGTH: Final[int] = 20
-    _PATTERN: Final = re.compile(r"^[a-z][a-z0-9_]*$")
+    MIN_LEN: ClassVar[Final[int]] = 3
+    MAX_LEN: ClassVar[Final[int]] = 20
+    PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^[a-z][a-z0-9_]{2,19}$")
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "value", self.value.strip().lower())
-        if len(self.value) > self._MAX_LENGTH or not self._PATTERN.match(self.value):
+        has_len_range = self.MIN_LEN <= len(self.value) <= self.MAX_LEN
+        has_pattern = self.PATTERN.match(self.value)
+        if not has_len_range or not has_pattern:
             raise excs.InvalidRoleNameException
 
     def __str__(self) -> str:
