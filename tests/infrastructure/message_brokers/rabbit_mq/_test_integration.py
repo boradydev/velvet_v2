@@ -3,12 +3,13 @@ import asyncio
 from uuid6 import uuid7
 
 from src.domain.employees.events import EmployeeRegisteredEvent
-from src.infrastructure.brokers.rabbit_mq.consumer import RabbitMQConsumer
-from src.infrastructure.brokers.rabbit_mq.publisher import RabbitMQPublisher
-from src.infrastructure.brokers.rabbit_mq.settings import EventBusSettings
+from src.infrastructure.message_brokers.rabbit_mq.consumer import RabbitMQConsumer
+from src.infrastructure.message_brokers.rabbit_mq.publisher import RabbitMQPublisher
+from src.infrastructure.message_brokers.rabbit_mq.settings import EventPublisherSettings
 
 
-settings = EventBusSettings(
+# todo требуется рефаторинг
+settings = EventPublisherSettings(
     RABBITMQ_HOST="localhost",
     RABBITMQ_PORT="5672",
     RABBITMQ_USER_PUBLISHER="publisher",

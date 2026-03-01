@@ -4,35 +4,19 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from faker import Faker
 
+from src.application.common.interfaces import IEventPublisher
 from src.application.employees.services import IEmployeeTasksService
 from src.domain.common.interfaces import services_abc
-from src.domain.employees.interfaces.repos import db_abc
-from src.domain.employees.interfaces.repos.cache_abc import IConfirmationCodeRepository
-from src.domain.employees.interfaces.uow_abc import IEmployeeUOW
-from tests.unit.application.employees import fakes
 
 
 @pytest.fixture
-def fake_employee_uow() -> fakes.FakeEmployeeUOW:
-    return fakes.FakeEmployeeUOW()
+def mock_event_publisher() -> IEventPublisher | AsyncMock:
+    return AsyncMock(spec_set=IEventPublisher)
 
 
 @pytest.fixture
-def mock_employee_uow() -> IEmployeeUOW | AsyncMock:
-    uow = AsyncMock(spec_set=IEmployeeUOW)
-    uow.employees = AsyncMock(spec_set=db_abc.IEmployeeRepository)
-    uow.auth_sessions = AsyncMock(spec_set=db_abc.IAuthSessionsRepository)
-    return uow
-
-
-@pytest.fixture
-def fake_confirmation_code_repo() -> fakes.FakeConfirmationCodeRepository:
-    return fakes.FakeConfirmationCodeRepository()
-
-
-@pytest.fixture
-def mock_confirmation_code_repo() -> IConfirmationCodeRepository | AsyncMock:
-    return AsyncMock(spec_set=IConfirmationCodeRepository)
+def mock_token_service() -> services_abc.ITokenService | AsyncMock:
+    return AsyncMock(spec_set=services_abc.ITokenService)
 
 
 @pytest.fixture
@@ -46,7 +30,7 @@ def mock_code_service() -> services_abc.IConfirmationCodeService | MagicMock:
 
 
 @pytest.fixture
-def mock_pass_service() -> services_abc.IPasswordService | MagicMock:
+def mock_password_service() -> services_abc.IPasswordService | MagicMock:
     return MagicMock(spec_set=services_abc.IPasswordService)
 
 
@@ -61,21 +45,13 @@ def mock_logger() -> services_abc.ILogger | MagicMock:
 
 
 @pytest.fixture
-def frozen_now() -> datetime:
+def mock_now() -> MagicMock:
     """2026-01-01 12:00:00+00:00."""
-    return datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
-
-
-@pytest.fixture
-def mock_get_now(frozen_now):
-    """2026-01-01 12:00:00+00:00."""
-
-    def get_frozen_now():
-        return frozen_now
-
-    return get_frozen_now
+    return MagicMock(return_value=datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC))
 
 
 @pytest.fixture
 def faker() -> Faker:
     return Faker()
+
+
