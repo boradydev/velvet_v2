@@ -16,27 +16,27 @@ class IEmployeeRepository(ABC):
     """
 
     @abstractmethod
-    async def save(self, employee: Employee) -> None:
+    async def save(self, *, employee: Employee) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, employee_id: UUID) -> Employee | None:
+    async def get_by_id(self, *, employee_id: UUID) -> Employee | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def exists_by_email(self, email: Email) -> bool:
+    async def exists_by_email(self, *, email: Email) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_by_id(self, employee_id: UUID) -> None:
+    async def delete_by_id(self, *, employee_id: UUID) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_id_by_email(self, email: Email) -> UUID | None:
+    async def get_id_by_email(self, *, email: Email) -> UUID | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_email(self, email) -> Employee | None:
+    async def get_by_email(self, *, email) -> Employee | None:
         raise NotImplementedError
 
 
@@ -44,19 +44,22 @@ class IAuthSessionsRepository(ABC):
     """Интерфейс репозитория для управления сессиями аутентификации."""
 
     @abstractmethod
-    async def save(self, auth_session: AuthSession) -> None:
+    async def save(self, *, auth_session: AuthSession) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, auth_session_id: UUID) -> AuthSession | None:
+    async def get_by_id(self, *, auth_session_id: UUID) -> AuthSession | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_by_id(self, auth_session_id: UUID) -> None:
+    async def delete_by_id(self, *, auth_session_id: UUID) -> None:
         raise NotImplementedError
 
     @abstractmethod
     async def get_by_device_and_employee_id(
-        self, device_id: UUID, employee_id: UUID
+        self,
+        *,
+        device_id: UUID,
+        employee_id: UUID,
     ) -> AuthSession | None:
         raise NotImplementedError

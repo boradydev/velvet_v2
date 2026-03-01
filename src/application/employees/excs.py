@@ -36,3 +36,23 @@ class InvalidConfirmationCodeException(BaseAppException):
 @dataclass(frozen=True, slots=True)
 class InvalidCredentialsEmployeeException(BaseAppException):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class RegistrationAlreadyExistsException(BaseAppException):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class RegistrationNotFound(BaseAppException):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class CooldownNotExpired(BaseAppException):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class TooLateToResend(BaseAppException):
+    pass

@@ -2,28 +2,27 @@ from dataclasses import dataclass
 
 from uuid6 import UUID
 
-from src.application.employees.excs import ConfirmationCodeActiveException
 from src.core.timezone import Timestamp
-from src.domain.employees.vals import ConfirmationCode, Email
+from src.domain.employees import vals
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CredentialsEmployeeDTO:
-    email: Email
-    password: str
+    email: vals.Email
+    password: vals.Password
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class LoginCredentialsEmployeeDTO:
-    email: Email
-    password: str
+    email: vals.Email
+    password: vals.Password
     device_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ConfirmRegisterDTO:
-    email: Email
-    confirmation_code: ConfirmationCode
+    email: vals.Email
+    confirmation_code: vals.ConfirmationCode
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -38,22 +37,14 @@ class RefreshTokenPayload:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class SendConfirmationDTO:
-    employee_id: UUID
-    email: Email
+class SendConfirmationCodeDTO:
+    email: vals.Email
+    confirmation_code: vals.ConfirmationCode
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ConfirmationEmployeeDTO:
-    employee_id: UUID
-    email: Email
-    code: ConfirmationCode
-    cooldown: Timestamp
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ResendCodeEmployeeDTO:
-    email: Email
+class ResendConfirmationCodeDTO:
+    email: vals.Email
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

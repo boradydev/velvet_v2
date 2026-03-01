@@ -1,8 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Protocol
 
-from src.application.employees.dtos import AccessTokenPayload, RefreshTokenPayload
-from src.domain.employees.vals import ConfirmationCode, Email
+from src.application.employees.dtos import (
+    AccessTokenPayload,
+    RefreshTokenPayload,
+    SendConfirmationCodeDTO,
+)
+from src.domain.employees.vals import ConfirmationCode, Password, PasswordHash
 
 
 class ILogger(Protocol):
@@ -19,7 +23,7 @@ class ILogger(Protocol):
 class IConfirmationCodeService(Protocol):
     """Протокол генерации кодов подтверждения (OTP, email-tokens)."""
 
-    def create_code(self) -> ConfirmationCode:
+    def generate(self) -> ConfirmationCode:
         """Генерирует уникальный проверочный код."""
         ...
 
@@ -28,16 +32,21 @@ class IPasswordService(ABC):
     """Интерфейс для безопасной работы с паролями пользователей."""
 
     @abstractmethod
-    def hashing_password(self, password: str) -> str:
+    def hash(self, *, password: Password) -> PasswordHash:
         """Преобразует сырой пароль в безопасный хеш."""
 
     @abstractmethod
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+    def verify_password(
+        self,
+        *,
+        plain_password: Password,
+        hashed_password: PasswordHash,
+    ) -> bool:
         """Проверяет соответствие сырого пароля ранее созданному хешу."""
 
 
 class IEmailService(Protocol):
-    async def send(self, email: Email, message: str):
+    async def send_confirmation_code(self, *, dto: SendConfirmationCodeDTO) -> None:
         """Отправляет сообщение."""
 
 

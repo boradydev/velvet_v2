@@ -12,7 +12,7 @@ class PasswordService(IPasswordService):
     ) -> None:
         self._pwd_context = pwd_context
 
-    def hashing_password(self, password: str) -> str:
+    def hash(self, password: str) -> str:
         return self._pwd_context.hash(password)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
