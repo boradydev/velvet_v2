@@ -5,8 +5,8 @@ from src.domain.employees.excs import InvalidRoleNameException
 from src.domain.employees.vals import RoleName
 
 
-valid_role_strategy = st.from_regex(RoleName.PATTERN, fullmatch=True).filter(
-    lambda s: RoleName.MIN_LEN <= len(s) <= RoleName.MAX_LEN
+valid_role_strategy = st.from_regex(RoleName._PATTERN, fullmatch=True).filter(
+    lambda s: RoleName._MIN_LEN <= len(s) <= RoleName._MAX_LEN
 )
 
 
@@ -30,7 +30,7 @@ def test_role_name_normalization():
 def test_role_name_rejects_garbage(garbage):
     """Проверяем, что любой невалидный формат отсекается."""
     processed = garbage.strip().lower()
-    if not RoleName.PATTERN.match(processed) or len(processed) > RoleName.MAX_LEN:
+    if not RoleName._PATTERN.match(processed) or len(processed) > RoleName._MAX_LEN:
         with pytest.raises(InvalidRoleNameException):
             RoleName(garbage)
 

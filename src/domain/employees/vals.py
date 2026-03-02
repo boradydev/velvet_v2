@@ -24,13 +24,13 @@ class Email:
 
     value: str
 
-    PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(
+    _PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(
         r"^[^\s@]+@[^\s@]+\.[^\s@]+$"
     )
 
     def __post_init__(self):
         object.__setattr__(self, "value", self.value.strip().lower())
-        if not self.PATTERN.match(self.value):
+        if not self._PATTERN.match(self.value):
             raise excs.InvalidEmailException
 
     def __str__(self) -> str:
@@ -59,17 +59,17 @@ class Password:
 
     value: str = field(repr=False)
 
-    MIN_LEN: ClassVar[int] = 8
-    PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(
+    _MIN_LEN: ClassVar[int] = 8
+    _PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(
         r"^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?\":{}|<>]).+$",
         re.DOTALL,
     )
 
     def __post_init__(self):
-        if len(self.value) < self.MIN_LEN:
+        if len(self.value) < self._MIN_LEN:
             raise excs.InvalidPasswordException
 
-        if not self.PATTERN.match(self.value):
+        if not self._PATTERN.match(self.value):
             raise excs.InvalidPasswordException
 
 
@@ -77,10 +77,10 @@ class Password:
 class ConfirmationCode:
     value: str
 
-    PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^\d{6}$")
+    _PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^\d{6}$")
 
     def __post_init__(self):
-        if not self.PATTERN.match(self.value):
+        if not self._PATTERN.match(self.value):
             raise excs.InvalidConfirmationCodeException
 
     def __str__(self) -> str:
@@ -91,14 +91,14 @@ class ConfirmationCode:
 class PasswordHash:
     value: str = field(repr=False)
 
-    MIN_LEN: ClassVar[Final[int]] = 30
-    PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^\$.+$")
+    _MIN_LEN: ClassVar[Final[int]] = 30
+    _PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^\$.+$")
 
     def __post_init__(self):
-        if len(self.value) < self.MIN_LEN:
+        if len(self.value) < self._MIN_LEN:
             raise excs.InvalidPasswordHashException
 
-        if not self.PATTERN.match(self.value):
+        if not self._PATTERN.match(self.value):
             raise excs.InvalidPasswordHashException
 
         if " " in self.value:
@@ -124,14 +124,14 @@ class RoleName:
 
     value: str
 
-    MIN_LEN: ClassVar[Final[int]] = 3
-    MAX_LEN: ClassVar[Final[int]] = 20
-    PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^[a-z][a-z0-9_]{2,19}$")
+    _MIN_LEN: ClassVar[Final[int]] = 3
+    _MAX_LEN: ClassVar[Final[int]] = 20
+    _PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^[a-z][a-z0-9_]{2,19}$")
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "value", self.value.strip().lower())
-        has_len_range = self.MIN_LEN <= len(self.value) <= self.MAX_LEN
-        has_pattern = self.PATTERN.match(self.value)
+        has_len_range = self._MIN_LEN <= len(self.value) <= self._MAX_LEN
+        has_pattern = self._PATTERN.match(self.value)
         if not has_len_range or not has_pattern:
             raise excs.InvalidRoleNameException
 

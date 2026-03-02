@@ -29,7 +29,7 @@ def test_password_hash_rejects_garbage(garbage):
     """Проверяет, что случайный текст без $ или короткий — отсекается."""
     if (
         not garbage.startswith("$")
-        or len(garbage) < PasswordHash.MIN_LEN
+        or len(garbage) < PasswordHash._MIN_LEN
         or " " in garbage
     ):
         with pytest.raises(InvalidPasswordHashException):

@@ -19,7 +19,7 @@ def test_confirmation_code_accepts_valid_digits(valid_value):
 @given(st.text())
 def test_confirmation_code_rejects_garbage(garbage):
     """Проверяет, что всё, что не является 6 цифрами, отсекается."""
-    if not ConfirmationCode.PATTERN.match(garbage):
+    if not ConfirmationCode._PATTERN.match(garbage):
         with pytest.raises(InvalidConfirmationCodeException):
             ConfirmationCode(garbage)
 

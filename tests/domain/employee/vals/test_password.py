@@ -27,7 +27,7 @@ def test_password_accepts_valid_complex_input(valid_pw):
 @given(st.text())
 def test_password_rejects_random_garbage(garbage):
     """Проверяет, что случайный мусор не проходит."""
-    if len(garbage) < Password.MIN_LEN or not Password.PATTERN.match(garbage):
+    if len(garbage) < Password._MIN_LEN or not Password._PATTERN.match(garbage):
         with pytest.raises(InvalidPasswordException):
             Password(garbage)
 

@@ -44,6 +44,6 @@ def test_email_rejects_random_garbage(garbage):
 
     Если вдруг сгенерируется валидный email, условие его не пропустит.
     """
-    if not Email.PATTERN.match(garbage.strip().lower()):
+    if not Email._PATTERN.match(garbage.strip().lower()):
         with pytest.raises(InvalidEmailException):
             Email(garbage)
