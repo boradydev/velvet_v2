@@ -43,7 +43,7 @@ async def test_resend_confirmation_success(
 
     await resend_use_case.execute(dto=resend_confirmation_code_dto)
 
-    repo_kwargs = mock_registration_repo.save.call_args.kwargs
+    repo_kwargs = mock_registration_repo.save_if_version_matches.call_args.kwargs
     save_registration: Registration = repo_kwargs["dto"]
     assert save_registration.resend_count == 1
     assert save_registration.confirmation_code == new_code
@@ -55,7 +55,7 @@ async def test_resend_confirmation_success(
 
     mock_code_service.generate.assert_called_once()
     mock_registration_repo.get_by_email.assert_awaited_once_with(email=dto.email)
-    mock_registration_repo.save.assert_awaited_once()
+    mock_registration_repo.save_if_version_matches.assert_awaited_once()
     mock_event_publisher.publish_many.assert_awaited_once()
 
     event_kwargs = mock_event_publisher.publish_many.call_args.kwargs
@@ -75,7 +75,7 @@ async def test_resend_confirmation_fails_if_registration_not_found(
     with pytest.raises(excs.RegistrationNotFound):
         await resend_use_case.execute(dto=resend_confirmation_code_dto)
 
-    mock_registration_repo.save.assert_not_awaited()
+    mock_registration_repo.save_if_version_matches.assert_not_awaited()
     mock_event_publisher.publish_many.assert_not_awaited()
 
 
@@ -100,7 +100,7 @@ async def test_resend_confirmation_fails_if_too_late(
     with pytest.raises(excs.TooLateToResend):
         await resend_use_case.execute(dto=resend_confirmation_code_dto)
 
-    mock_registration_repo.save.assert_not_awaited()
+    mock_registration_repo.save_if_version_matches.assert_not_awaited()
     mock_event_publisher.publish_many.assert_not_awaited()
 
 
@@ -128,5 +128,5 @@ async def test_resend_confirmation_fails_if_cooldown_not_expired(
     with pytest.raises(excs.CooldownNotExpired):
         await resend_use_case.execute(dto=resend_confirmation_code_dto)
 
-    mock_registration_repo.save.assert_not_awaited()
+    mock_registration_repo.save_if_version_matches.assert_not_awaited()
     mock_event_publisher.publish_many.assert_not_awaited()

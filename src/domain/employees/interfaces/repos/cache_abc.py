@@ -14,26 +14,31 @@ class IRegistrationRepository(ABC):
         dto: Registration,
         ttl: Timedelta,
     ) -> None:
+        """Сохраняет, если еще не существует."""
         raise NotImplementedError
 
     @abstractmethod
-    async def save(
+    async def save_if_version_matches(
         self,
         *,
         email: Email,
         dto: Registration,
         ttl: Timedelta,
     ) -> None:
+        """Сохраняет, если существует и версия совпадает."""
         raise NotImplementedError
 
     @abstractmethod
     async def get_by_email(self, *, email: Email) -> Registration | None:
+        """Получает по емэил."""
         raise NotImplementedError
 
     @abstractmethod
     async def delete_by_email(self, *, email: Email) -> None:
+        """Удаляет по емэил."""
         raise NotImplementedError
 
     @abstractmethod
     async def exists_by_email(self, *, email: Email) -> bool:
+        """Проверяет существование по емэил."""
         raise NotImplementedError
