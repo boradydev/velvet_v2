@@ -29,7 +29,7 @@ class IRegistrationRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_email(self, *, email: Email) -> Registration | None:
+    async def find_by_email(self, *, email: Email) -> Registration | None:
         """Получает по емэил."""
         raise NotImplementedError
 

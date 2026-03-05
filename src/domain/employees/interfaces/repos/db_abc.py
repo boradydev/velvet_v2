@@ -16,7 +16,13 @@ class IEmployeeRepository(ABC):
     """
 
     @abstractmethod
-    async def save(self, *, employee: Employee) -> None:
+    async def add(self, *, employee: Employee) -> None:
+        """
+        Добавляет нового сотрудника в систему.
+
+        Raises:
+            EmployeeAlreadyExistsException: Если email или ID уже заняты.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -36,7 +42,7 @@ class IEmployeeRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_email(self, *, email) -> Employee | None:
+    async def find_by_email(self, *, email) -> Employee | None:
         raise NotImplementedError
 
 
@@ -45,21 +51,34 @@ class IAuthSessionsRepository(ABC):
 
     @abstractmethod
     async def save(self, *, auth_session: AuthSession) -> None:
+        """Сохраняет новую сессию или обновляет существующую."""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, *, auth_session_id: UUID) -> AuthSession | None:
+    async def get(
+        self,
+        *,
+        auth_session_id: UUID,
+        employee_id: UUID,
+    ) -> AuthSession:
+        """
+        Получает сессию аутентификации по id и employee_id.
+
+        Raises:
+            AuthSessionNotFoundException: Если не найдена.
+        """
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_by_id(self, *, auth_session_id: UUID) -> None:
+    async def delete(self, *, auth_session: AuthSession) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_device_and_employee_id(
+    async def get_for_update(
         self,
         *,
         device_id: UUID,
         employee_id: UUID,
     ) -> AuthSession | None:
+        """Использует пессимистичную блокировку."""
         raise NotImplementedError
