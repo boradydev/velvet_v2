@@ -65,6 +65,7 @@ class ITokenService(ABC):
         **kwargs,
     ) -> str:
         """Создает токен доступа с полезной нагрузкой из переданных данных."""
+        raise NotImplementedError
 
     @abstractmethod
     def get_payload_access_token(
@@ -73,6 +74,7 @@ class ITokenService(ABC):
         access_token: str,
     ) -> dtos.AccessTokenPayload:
         """Возвращает payload токена доступа в виде dataclass."""
+        raise NotImplementedError
 
     @abstractmethod
     def create_refresh_token(
@@ -82,6 +84,7 @@ class ITokenService(ABC):
         **kwargs,
     ) -> str:
         """Создает токен обновления с полезной нагрузкой из переданных данных."""
+        raise NotImplementedError
 
     @abstractmethod
     def get_payload_refresh_token(
@@ -90,6 +93,7 @@ class ITokenService(ABC):
         refresh_token: str,
     ) -> dtos.RefreshTokenPayload:
         """Возвращает payload токена обновления в виде dataclass."""
+        raise NotImplementedError
 
     @abstractmethod
     def hash_refresh_token(
@@ -98,6 +102,7 @@ class ITokenService(ABC):
         refresh_token: str,
     ) -> RefreshTokenHash:
         """Возвращает хэш токена обновления."""
+        raise NotImplementedError
 
     @abstractmethod
     def verify_hash_refresh_token(
@@ -107,3 +112,4 @@ class ITokenService(ABC):
         hashed_token: RefreshTokenHash,
     ) -> bool:
         """Проверяет, что токен обновления соответствует хэшу."""
+        raise NotImplementedError

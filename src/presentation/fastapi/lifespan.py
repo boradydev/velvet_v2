@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     )
     use_case_resources = UseCaseResources(
         session_factory=postgres.session_factory,
-        token_service=JwtTokensService(settings.jwt),
+        token_service=JwtTokensService(settings=settings.jwt),
         password_service=PasswordService(settings.password.DEFAULT_CONTEXT),
         confirm_code_service=ConfirmCodeService(),
         email_service=EmailService(),
