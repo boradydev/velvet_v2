@@ -3,7 +3,7 @@ from typing import Annotated
 from taskiq_dependencies import Depends
 
 from src.application.employees.cases import (
-    SendRegisterConfirmation,
+    SendConfirmation,
 )
 from src.domain.employees.events import EmployeeRegisteredEvent
 from src.domain.employees.vals import Email
@@ -18,7 +18,7 @@ from src.presentation.taskiq_event.employee.schemas import RegistrationTaskSchem
 async def handle_registration(
     payload: RegistrationTaskSchema,
     interactor: Annotated[
-        SendRegisterConfirmation, Depends(get_send_code_confirmation)
+        SendConfirmation, Depends(get_send_code_confirmation)
     ],
 ):
     await interactor.execute(
