@@ -25,7 +25,7 @@ class IRegistrationRepository(ABC):
         dto: Registration,
         ttl: Timedelta,
     ) -> None:
-        """Сохраняет, если существует и версия совпадает."""
+        """Сохраняет, если существует и версия совпадает (Оптимистичная блокировка)."""
         raise NotImplementedError
 
     @abstractmethod
