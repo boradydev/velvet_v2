@@ -1,6 +1,5 @@
 import re
 from typing import Annotated
-from uuid import UUID
 
 from pydantic import AfterValidator, EmailStr, Field, SecretStr
 
@@ -61,4 +60,3 @@ class ConfirmRegisterRequest(BaseSchema):
 class AuthTokensResponse(BaseSchema):
     access_token: str
     refresh_token: str
-    device_id: UUID
