@@ -15,10 +15,10 @@ class Role(BaseEntity):
     permissions: set[Permission]
     created_at: Timestamp
 
-    def add_permission(self, permission: Permission) -> None:
+    def add_permission(self, *, permission: Permission) -> None:
         self.permissions.add(permission)
 
-    def remove_permission(self, permission: Permission) -> None:
+    def remove_permission(self, *, permission: Permission) -> None:
         self.permissions.remove(permission)
 
     @classmethod
