@@ -34,7 +34,7 @@ def validate_password_complexity(value: SecretStr) -> SecretStr:
     return value
 
 
-class RegisterRequest(BaseSchema):
+class CredentialsRequest(BaseSchema):
     email: EmailStr
     password: Annotated[
         SecretStr,

@@ -9,3 +9,5 @@ docs_registry = registry.DocsTemplateRegistry(template_factory)
 
 docs_registry.add("docs/register.md")
 docs_registry.add("docs/resend.md")
+docs_registry.add("docs/confirm.md")
+docs_registry.add("docs/login.md")
