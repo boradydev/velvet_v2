@@ -1,5 +1,7 @@
 import ipaddress
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
+from typing import ClassVar, Final
 
 from src.domain.auth_sessions import excs
 
@@ -32,3 +34,46 @@ class UserAgent:
 
     def __str__(self) -> str:
         return self.value
+
+
+@dataclass(frozen=True, slots=True)
+class RefreshToken:
+    """
+    Представляет собой сырой Refresh-токен (JWT).
+
+    Гарантирует, что токен не пуст, обрезан от пробелов
+    и имеет структуру JWT (три части, разделенные точками).
+    """
+
+    value: str = field(repr=False)
+
+    _MAX_LENGTH: ClassVar[Final[int]] = 1024
+    _PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(
+        r"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$"
+    )
+
+    def __post_init__(self) -> None:
+        if len(self.value) > self._MAX_LENGTH or not self._PATTERN.match(self.value):
+            raise excs.InvalidRefreshTokenStructureException
+
+
+@dataclass(frozen=True, slots=True)
+class RefreshTokenHash:
+    """
+    Хранимый хэш Refresh-токена.
+
+    Гарантирует, что строка является валидным результатом SHA-256 (hex-представление).
+    ``^[a-f0-9]`` - только шестнадцатеричные символы в нижнем регистре
+
+    ``{64}`` - строго 64 символа (длина SHA-256 в hex)
+    """
+
+    value: str = field(repr=False)
+
+    _PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^[a-f0-9]{64}$")
+
+    def __post_init__(self) -> None:
+        has_pattern = self._PATTERN.match(self.value)
+
+        if not has_pattern:
+            raise excs.InvalidRefreshTokenHashException

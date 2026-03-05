@@ -3,6 +3,7 @@ from typing import Any, Protocol
 
 from src.application.common.interfaces import IEventPublisher
 from src.application.employees import cases
+from src.core.timezone import Timestamp
 from src.domain.common.interfaces.services_abc import (
     ILogger,
     IPasswordService,
@@ -26,26 +27,19 @@ class IEmployeeUseCaseResources(Protocol):
     """Контракт ресурсов (БД, сервисы) для сборки интеракторов (Employees)."""
 
     @property
-    def session_factory(self) -> Callable[[], Any]:
-        """Фабрика сессий. Возвращает объект сессии (AsyncSession) при вызове."""
-        ...
+    def session_factory(self) -> Callable[[], Any]: ...
 
     @property
-    def token_service(self) -> ITokenService:
-        """Сервис для работы с JWT или OAuth2 токенами."""
-        ...
+    def token_service(self) -> ITokenService: ...
 
     @property
-    def password_service(self) -> IPasswordService:
-        """Сервис хеширования и проверки паролей."""
-        ...
+    def password_service(self) -> IPasswordService: ...
 
     @property
-    def event_publisher(self) -> IEventPublisher:
-        """Брокер событий домена."""
-        ...
+    def event_publisher(self) -> IEventPublisher: ...
 
     @property
-    def logger(self) -> ILogger:
-        """Логгер."""
-        ...
+    def logger(self) -> ILogger: ...
+
+    @property
+    def get_now(self) -> Callable[[], Timestamp]: ...

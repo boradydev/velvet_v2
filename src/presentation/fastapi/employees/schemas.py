@@ -1,10 +1,8 @@
 import re
 from typing import Annotated
 
-from pydantic import AfterValidator, Field, SecretStr
-from uuid6 import UUID
+from pydantic import AfterValidator, EmailStr, Field, SecretStr
 
-from src.domain.employees.vals import ConfirmationCode, Email
 from src.presentation.fastapi.common.schemas import BaseSchema
 from src.presentation.fastapi.employees.exceptions import (
     ValidationPasswordHTTPException,
@@ -37,7 +35,7 @@ def validate_password_complexity(value: SecretStr) -> SecretStr:
 
 
 class RegisterRequest(BaseSchema):
-    email: Email
+    email: EmailStr
     password: Annotated[
         SecretStr,
         Field(
@@ -51,15 +49,14 @@ class RegisterRequest(BaseSchema):
 
 
 class ResendRequest(BaseSchema):
-    email: Email
+    email: EmailStr
 
 
 class ConfirmRegisterRequest(BaseSchema):
-    email: Email
-    confirm_code: ConfirmationCode
+    email: EmailStr
+    confirm_code: str
 
 
 class AuthTokensResponse(BaseSchema):
     access_token: str
     refresh_token: str
-    device_id: UUID

@@ -1,10 +1,9 @@
-from datetime import datetime
 from typing import TypeVar
 
 import inflection
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.core.timezone import get_timestamp
+from src.core.timezone import Timestamp, get_now
 
 
 class BaseSchemaOrigin(BaseModel):
@@ -29,7 +28,7 @@ class Meta(BaseSchema):
         timestamp: Время формирования ответа в формате UTC.
     """
 
-    timestamp: datetime = Field(default_factory=get_timestamp)
+    timestamp: Timestamp = Field(default_factory=get_now)
 
 
 DataType = TypeVar("DataType", bound=BaseSchema)
@@ -67,6 +66,7 @@ class StandardResponse[DataType: BaseSchema](BaseResponse):
     """
 
     data: DataType
+
 
 class ErrorResponse(BaseSchema):
     detail: str

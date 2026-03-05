@@ -6,7 +6,9 @@ import aio_pika
 
 from src.application.common.interfaces import IEventPublisher
 from src.domain.common.events import BaseDomainEvent
-from src.infrastructure.message_brokers.rabbit_mq.exceptions import RabbitMQConnectionException
+from src.infrastructure.message_brokers.rabbit_mq.exceptions import (
+    RabbitMQConnectionException,
+)
 
 
 class RabbitMQPublisher(IEventPublisher):

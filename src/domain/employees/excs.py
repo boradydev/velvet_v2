@@ -36,3 +36,18 @@ class InvalidRoleNameException(DomainException):
 @dataclass(frozen=True, slots=True)
 class InvalidCredentialsException(DomainException):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class InvalidConfirmationCodeException(DomainException):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class RegistrationExpired(DomainException):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class InvalidConfirmationCode(DomainException):
+    pass

@@ -11,7 +11,7 @@ class IEventPublisher(ABC):
     """
 
     @abstractmethod
-    async def publish(self, event: BaseDomainEvent) -> None:
+    async def publish(self, *, event: BaseDomainEvent) -> None:
         """
         Публикует одно событие.
 
@@ -19,7 +19,7 @@ class IEventPublisher(ABC):
         """
 
     @abstractmethod
-    async def publish_many(self, events: list[BaseDomainEvent]) -> None:
+    async def publish_many(self, *, events: list[BaseDomainEvent]) -> None:
         """
         Оптимизированная публикация списка событий.
 

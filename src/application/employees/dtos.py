@@ -2,62 +2,60 @@ from dataclasses import dataclass
 
 from uuid6 import UUID
 
-from src.application.employees.excs import ConfirmationCodeActiveException
-from src.core.timezone import Timestamp
-from src.domain.employees.vals import ConfirmationCode, Email
+from src.domain.auth_sessions.vals import IpAddress, RefreshToken, UserAgent
+from src.domain.employees import vals
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CredentialsEmployeeDTO:
-    email: Email
-    password: str
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class LoginCredentialsEmployeeDTO:
-    email: Email
-    password: str
-    device_id: UUID | None = None
+    email: vals.Email
+    password: vals.Password
+    user_agent: UserAgent
+    ip_address: IpAddress | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ConfirmRegisterDTO:
-    email: Email
-    confirmation_code: ConfirmationCode
+    email: vals.Email
+    confirmation_code: vals.ConfirmationCode
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AccessTokenPayload:
-    user_id: int
-    role: str
+    user_id: UUID
+    role: vals.RoleName
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class RefreshTokenPayload:
-    session_id: int
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class SendConfirmationDTO:
+    auth_session_id: UUID
     employee_id: UUID
-    email: Email
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ConfirmationEmployeeDTO:
-    employee_id: UUID
-    email: Email
-    code: ConfirmationCode
-    cooldown: Timestamp
+class SendConfirmationCodeDTO:
+    email: vals.Email
+    confirmation_code: vals.ConfirmationCode
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ResendCodeEmployeeDTO:
-    email: Email
+class ResendConfirmationCodeDTO:
+    email: vals.Email
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AuthTokensDTO:
     access_token: str
     refresh_token: str
-    device_id: UUID
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RefreshDTO:
+    refresh_token: RefreshToken
+    user_agent: UserAgent
+    ip_address: IpAddress | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class LogoutDTO:
+    refresh_token: RefreshToken

@@ -1,7 +1,9 @@
 import secrets
 
+from src.domain.employees.vals import ConfirmationCode
+
 
 class ConfirmCodeService:
-    def create_code(self) -> str:
+    def generate(self) -> ConfirmationCode:
         """Создаёт новый код подтверждения."""
-        return f"{secrets.randbelow(1_000_000):06}"
+        return ConfirmationCode(f"{secrets.randbelow(1_000_000):06}")

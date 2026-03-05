@@ -1,6 +1,7 @@
 from passlib.context import CryptContext
 
 from src.domain.common.interfaces.services_abc import IPasswordService
+from src.domain.employees.vals import Password, PasswordHash
 
 
 class PasswordService(IPasswordService):
@@ -12,8 +13,13 @@ class PasswordService(IPasswordService):
     ) -> None:
         self._pwd_context = pwd_context
 
-    def hashing_password(self, password: str) -> str:
-        return self._pwd_context.hash(password)
+    def hash(self, *, password: Password) -> PasswordHash:
+        return PasswordHash(self._pwd_context.hash(password.value))
 
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return self._pwd_context.verify(plain_password, hashed_password)
+    def verify_password(
+        self,
+        *,
+        plain_password: Password,
+        hashed_password: PasswordHash,
+    ) -> bool:
+        return self._pwd_context.verify(plain_password.value, hashed_password.value)

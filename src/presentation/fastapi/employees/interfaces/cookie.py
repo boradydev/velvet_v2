@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-from uuid6 import UUID
-
 
 class IAuthCookieManager(ABC):
     @abstractmethod
@@ -10,7 +8,6 @@ class IAuthCookieManager(ABC):
         *,
         access_token: str,
         refresh_token: str,
-        device_id: UUID,
     ) -> None:
         raise NotImplementedError
 
@@ -18,6 +15,17 @@ class IAuthCookieManager(ABC):
     def delete_auth_cookies(self) -> None:
         raise NotImplementedError
 
+    @property
     @abstractmethod
-    def get_device_id(self) -> str | None:
+    def access_token(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def refresh_token(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def user_agent(self) -> str:
         raise NotImplementedError

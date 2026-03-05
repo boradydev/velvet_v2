@@ -16,3 +16,23 @@ class InvalidIpAddressException(DomainException):
 @dataclass(frozen=True, slots=True)
 class UserAgentIsEmptyException(DomainException):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class InvalidRefreshTokenHashException(DomainException):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class InvalidRefreshTokenException(DomainException):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class SessionOwnershipViolationException(DomainException):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class InvalidRefreshTokenStructureException(DomainException):
+    pass

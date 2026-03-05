@@ -2,28 +2,20 @@ from typing import Annotated
 
 from taskiq_dependencies import Depends
 
-from src.application.employees.cases import (
-    SendRegisterConfirmation,
-)
-from src.domain.employees.events import EmployeeRegisteredEvent
-from src.domain.employees.vals import Email
+from src.application.employees import cases, dtos
+from src.domain.employees.vals import ConfirmationCode, Email
 from src.presentation.taskiq_event.app import broker
-from src.presentation.taskiq_event.employee.dependencies import (
-    get_send_code_confirmation,
-)
-from src.presentation.taskiq_event.employee.schemas import RegistrationTaskSchema
+from src.presentation.taskiq_event.employee import deps, schemas
 
 
 @broker.task(task_name="EmployeeRegisteredEvent")
 async def handle_registration(
-    payload: RegistrationTaskSchema,
-    interactor: Annotated[
-        SendRegisterConfirmation, Depends(get_send_code_confirmation)
-    ],
-):
-    await interactor.execute(
-        EmployeeRegisteredEvent(
+    payload: schemas.RegistrationTaskSchema,
+    case: Annotated[cases.SendConfirmation, Depends(deps.get_send_code_confirmation)],
+) -> None:
+    await case.execute(
+        dto=dtos.SendConfirmationCodeDTO(
             email=Email(payload.email),
-            employee_id=payload.employee_id,
+            confirmation_code=ConfirmationCode(payload.confirmation_code),
         )
     )
