@@ -2,9 +2,9 @@ from abc import ABC
 from typing import Literal
 
 from fastapi import Request, Response
-from uuid6 import UUID
 
 from src.infrastructure.auth.jwt.settings import JwtSettings
+from src.infrastructure.web.fastapi.excs import CookieNotFound
 from src.presentation.fastapi.employees.interfaces.cookie import IAuthCookieManager
 
 
@@ -52,7 +52,6 @@ class AuthCookieManager(IFastapiCookieManager, IAuthCookieManager):
         *,
         access_token: str,
         refresh_token: str,
-        device_id: UUID,
     ) -> None:
         self._set(
             key="access_token",
@@ -64,16 +63,25 @@ class AuthCookieManager(IFastapiCookieManager, IAuthCookieManager):
             value=refresh_token,
             max_age=self.settings.REFRESH_TOKEN_EXPIRE_SECONDS,
         )
-        self._set(
-            key="device_id",
-            value=str(device_id),
-            max_age=self.settings.DEVICE_ID_EXPIRE_SECONDS,
-        )
 
     def delete_auth_cookies(self) -> None:
         self._response.delete_cookie(key="access_token")
         self._response.delete_cookie(key="refresh_token")
-        self._response.delete_cookie(key="device_id")
 
-    def get_device_id(self) -> str | None:
-        return self._request.cookies.get("device_id")
+    def _get(self, key: str) -> str:
+        cookie = self._request.cookies.get(key)
+        if not cookie:
+            raise CookieNotFound
+        return cookie
+
+    @property
+    def access_token(self) -> str:
+        return self._get("access_token")
+
+    @property
+    def refresh_token(self) -> str:
+        return self._get("refresh_token")
+
+    @property
+    def user_agent(self) -> str:
+        return self._get("user_agent")
