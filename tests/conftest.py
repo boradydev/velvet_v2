@@ -51,7 +51,10 @@ def mock_now() -> MagicMock:
 
 
 @pytest.fixture
+def mock_id_generator() -> MagicMock:
+    return MagicMock()
+
+
+@pytest.fixture
 def faker() -> Faker:
     return Faker()
-
-

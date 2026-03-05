@@ -4,7 +4,12 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.application.employees import dtos
-from src.application.employees.cases import Register, ReSendCodeConfirmation
+from src.application.employees.cases import (
+    ConfirmRegister,
+    Register,
+    ReSendCodeConfirmation,
+)
+from src.domain.auth_sessions.vals import UserAgent
 from src.domain.employees.entities import Registration
 from src.domain.employees.interfaces.repos import db_abc
 from src.domain.employees.interfaces.repos.cache_abc import IRegistrationRepository
@@ -53,6 +58,25 @@ def use_case_register(
 
 
 @pytest.fixture
+def use_case_confirm_register(
+    mock_employee_uow,
+    mock_registration_repo,
+    mock_token_service,
+    mock_now,
+    mock_id_generator,
+    mock_registration_policy,
+) -> ConfirmRegister:
+    return ConfirmRegister(
+        uow=mock_employee_uow,
+        registration_repo=mock_registration_repo,
+        token_service=mock_token_service,
+        get_now=mock_now,
+        id_generator=mock_id_generator,
+        policy=mock_registration_policy,
+    )
+
+
+@pytest.fixture
 def creds_employee_dto(
     password,
     email,
@@ -60,6 +84,18 @@ def creds_employee_dto(
     return dtos.CredentialsEmployeeDTO(
         email=email,
         password=password,
+        user_agent=UserAgent("test_user_agent"),
+    )
+
+
+@pytest.fixture
+def confirmation_registration_dto(
+    email,
+    confirmation_code,
+) -> dtos.ConfirmRegisterDTO:
+    return dtos.ConfirmRegisterDTO(
+        email=email,
+        confirmation_code=confirmation_code,
     )
 
 
@@ -92,17 +128,20 @@ def resend_use_case(
 
 @pytest.fixture
 def get_registration_entity(
-    email,
+    creds_employee_dto,
     password_hash,
+    confirmation_code,
     mock_registration_policy,
     mock_now,
 ) -> Callable[..., Registration]:
     return lambda: Registration.create(
-        email=email,
+        email=creds_employee_dto.email,
         password_hash=password_hash,
-        confirmation_code=ConfirmationCode("111111"),
+        confirmation_code=confirmation_code,
         confirmation_ttl=mock_registration_policy.get_confirmation_ttl(),
         now=mock_now(),
+        user_agent=creds_employee_dto.user_agent,
+        ip_address=creds_employee_dto.ip_address,
     )
 
 

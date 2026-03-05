@@ -34,7 +34,7 @@ async def test_resend_confirmation_success(
 
     registration = get_registration_entity()
     registration._events.clear()
-    mock_registration_repo.get_by_email.return_value = registration
+    mock_registration_repo.find_by_email.return_value = registration
     mock_code_service.generate.return_value = new_code
     mock_now.return_value = now
 
@@ -54,7 +54,7 @@ async def test_resend_confirmation_success(
     assert repo_kwargs["ttl"] < confirmation_ttl
 
     mock_code_service.generate.assert_called_once()
-    mock_registration_repo.get_by_email.assert_awaited_once_with(email=dto.email)
+    mock_registration_repo.find_by_email.assert_awaited_once_with(email=dto.email)
     mock_registration_repo.save_if_version_matches.assert_awaited_once()
     mock_event_publisher.publish_many.assert_awaited_once()
 
@@ -70,7 +70,7 @@ async def test_resend_confirmation_fails_if_registration_not_found(
     mock_registration_repo,
     mock_event_publisher,
 ) -> None:
-    mock_registration_repo.get_by_email.return_value = None
+    mock_registration_repo.find_by_email.return_value = None
 
     with pytest.raises(excs.RegistrationNotFound):
         await resend_use_case.execute(dto=resend_confirmation_code_dto)
@@ -95,7 +95,7 @@ async def test_resend_confirmation_fails_if_too_late(
 
     registration = get_registration_entity()
     registration.confirmation_deadline = now - timedelta(minutes=29)
-    mock_registration_repo.get_by_email.return_value = registration
+    mock_registration_repo.find_by_email.return_value = registration
 
     with pytest.raises(excs.TooLateToResend):
         await resend_use_case.execute(dto=resend_confirmation_code_dto)
@@ -123,7 +123,7 @@ async def test_resend_confirmation_fails_if_cooldown_not_expired(
 
     registration = get_registration_entity()
     registration.last_code_sent_at = now - timedelta(seconds=30)
-    mock_registration_repo.get_by_email.return_value = registration
+    mock_registration_repo.find_by_email.return_value = registration
 
     with pytest.raises(excs.CooldownNotExpired):
         await resend_use_case.execute(dto=resend_confirmation_code_dto)
