@@ -1,7 +1,6 @@
-from src.domain.common.interfaces.services_abc import IEmailService
-from src.domain.employees.vals import Email
+from src.application.employees.dtos import SendConfirmationCodeDTO
 
 
-class EmailService(IEmailService):  # todo затычка для отправки проверочного кода
-    def send(self, email: Email, message: str):
-        print(f"{email.value}: {message}")
+class EmailService:
+    async def send_confirmation_code(self, *, dto: SendConfirmationCodeDTO) -> None:
+        raise NotImplementedError
