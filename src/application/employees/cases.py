@@ -2,266 +2,355 @@ from collections.abc import Callable
 
 from uuid6 import UUID
 
+from src.application.common.interfaces import IEventPublisher
 from src.application.employees import dtos, excs
-from src.application.employees.services import IEmployeeTasksService
-from src.core.timezone import Timedelta, Timestamp
+from src.core.timezone import Timestamp
 from src.domain.auth_sessions.entity import AuthSession
 from src.domain.common.interfaces import services_abc
-from src.domain.employees.entities import Employee
+from src.domain.employees.entities import Employee, Registration
 from src.domain.employees.interfaces import uow_abc
-from src.domain.employees.interfaces.repos import cache_abc
-from src.domain.employees.vals import Email
+from src.domain.employees.interfaces.repos.cache_abc import IRegistrationRepository
+from src.domain.employees.policies import IRegistrationPolicy
 
 
 class Register:
     def __init__(
         self,
+        *,
         uow: uow_abc.IEmployeeUOW,
+        registration_repo: IRegistrationRepository,
+        event_publisher: IEventPublisher,
         password_service: services_abc.IPasswordService,
-        get_now: Callable[[], Timestamp],
-        logger: services_abc.ILogger,
-    ) -> None:
-        self.uow = uow
-        self.password_service = password_service
-        self.logger = logger
-        self.get_now = get_now
-
-    async def execute(self, dto: dtos.CredentialsEmployeeDTO) -> None:
-        timestamp = self.get_now()
-        password_hash = self.password_service.hashing_password(dto.password)
-        async with self.uow as db:
-            if await db.employees.exists_by_email(dto.email):
-                raise excs.EmployeeAlreadyExistsException
-
-            employee = Employee.register(
-                email=dto.email,
-                password_hash=password_hash,
-                timestamp=timestamp,
-            )
-            await db.employees.save(employee)
-            await db.commit(events=employee.pull_events())
-
-
-class SendRegisterConfirmation:
-    def __init__(
-        self,
-        code_repo: cache_abc.IConfirmationCodeRepository,
-        code_ttl: int,
-        email_service: services_abc.IEmailService,
         code_service: services_abc.IConfirmationCodeService,
         get_now: Callable[[], Timestamp],
-        resend_cooldown: Timedelta,
+        policy: IRegistrationPolicy,
     ) -> None:
-        self.code_repo = code_repo
-        self.code_ttl = code_ttl
-        self.email_service = email_service
+        self.uow = uow
+        self.registration_repo = registration_repo
+        self.event_publisher = event_publisher
+        self.password_service = password_service
         self.code_service = code_service
         self.get_now = get_now
-        self.resend_cooldown = resend_cooldown
+        self.policy = policy
 
-    async def execute(self, dto: dtos.SendConfirmationDTO) -> None:
-        timestamp = self.get_now()
-        code = self.code_service.create_code()
-        confirmation = dtos.ConfirmationEmployeeDTO(
-            employee_id=dto.employee_id,
+    async def execute(self, *, dto: dtos.CredentialsEmployeeDTO) -> None:
+        now = self.get_now()
+        if await self.registration_repo.exists_by_email(email=dto.email):
+            raise excs.RegistrationAlreadyExistsException
+
+        async with self.uow as uow:
+            if await uow.employees.exists_by_email(email=dto.email):
+                raise excs.EmployeeAlreadyExistsException
+
+        registration = Registration.create(
             email=dto.email,
-            code=code,
-            cooldown=timestamp + self.resend_cooldown,
+            password_hash=self.password_service.hash(password=dto.password),
+            user_agent=dto.user_agent,
+            ip_address=dto.ip_address,
+            now=now,
+            confirmation_code=self.code_service.generate(),
+            confirmation_ttl=self.policy.get_confirmation_ttl(),
         )
-        await self.code_repo.save(
+        await self.registration_repo.save_if_not_exists(
             email=dto.email,
-            dto=confirmation,
-            ttl=self.code_ttl,
+            dto=registration,
+            ttl=registration.time_left(now=now),
         )
-        await self.email_service.send(
-            email=dto.email,
-            message=str(code),
-        )
+        await self.event_publisher.publish_many(events=registration.pull_events())
+
+
+class SendConfirmation:
+    def __init__(
+        self,
+        *,
+        email_service: services_abc.IEmailService,
+    ) -> None:
+        self.email_service = email_service
+
+    async def execute(self, *, dto: dtos.SendConfirmationCodeDTO) -> None:
+        await self.email_service.send_confirmation_code(dto=dto)
 
 
 class ReSendCodeConfirmation:
     def __init__(
         self,
-        uow: uow_abc.IEmployeeUOW,
-        code_repo: cache_abc.IConfirmationCodeRepository,
-        task_service: IEmployeeTasksService,
+        *,
+        registration_repo: IRegistrationRepository,
+        event_publisher: IEventPublisher,
+        code_service: services_abc.IConfirmationCodeService,
         get_now: Callable[[], Timestamp],
+        policy: IRegistrationPolicy,
     ) -> None:
-        self.uow = uow
-        self.code_repo = code_repo
-        self.task_service = task_service
+        self.registration_repo = registration_repo
+        self.event_publisher = event_publisher
+        self.code_service = code_service
         self.get_now = get_now
+        self.policy = policy
 
-    async def execute(self, dto: dtos.ResendCodeEmployeeDTO) -> None:
-        timestamp = self.get_now()
-        employee_id = await self._resolve_employee_id(
-            email=dto.email,
-            timestamp=timestamp,
+    async def execute(self, *, dto: dtos.ResendConfirmationCodeDTO) -> None:
+        now = self.get_now()
+        registration = await self.registration_repo.find_by_email(email=dto.email)
+        if not registration:
+            raise excs.RegistrationNotFound
+
+        min_ttl = self.policy.get_min_resend_ttl()
+        if not registration.has_enough_time_left(now=now, min_ttl=min_ttl):
+            raise excs.TooLateToResend
+
+        cooldown = self.policy.get_cooldown(resend_count=registration.resend_count)
+        if not registration.can_resend(now=now, cooldown=cooldown):
+            raise excs.CooldownNotExpired
+
+        new_code = self.code_service.generate()
+        registration.resend(
+            new_code=new_code,
+            now=now,
         )
-        send_confirmation = dtos.SendConfirmationDTO(
-            employee_id=employee_id,
-            email=dto.email,
+        await self.registration_repo.save_if_version_matches(
+            email=registration.email,
+            dto=registration,
+            ttl=registration.time_left(now=now),
         )
-        await self.task_service.send_by_email(send_confirmation)
-
-    async def _resolve_employee_id(
-        self,
-        *,
-        email: Email,
-        timestamp: Timestamp,
-    ) -> UUID:
-        confirmation = await self.code_repo.get_by_email(email)
-        if confirmation:
-            self._ensure_cooldown_passed(
-                timestamp=timestamp,
-                cooldown=confirmation.cooldown,
-            )
-            return confirmation.employee_id
-
-        async with self.uow as db:
-            employee_id = await db.employees.get_id_by_email(email)
-
-        if not employee_id:
-            raise excs.EmployeeNotFoundException
-
-        return employee_id
-
-    @staticmethod
-    def _ensure_cooldown_passed(
-        *,
-        timestamp: Timestamp,
-        cooldown: Timestamp,
-    ) -> None:
-        if cooldown > timestamp:
-            raise excs.ConfirmationCodeActiveException
+        await self.event_publisher.publish_many(events=registration.pull_events())
 
 
 class ConfirmRegister:
     def __init__(
         self,
+        *,
         uow: uow_abc.IEmployeeUOW,
-        code_repo: cache_abc.IConfirmationCodeRepository,
+        registration_repo: IRegistrationRepository,
         token_service: services_abc.ITokenService,
         get_now: Callable[[], Timestamp],
-        session_expires_delta: Timedelta,
+        id_generator: Callable[[], UUID],
+        policy: IRegistrationPolicy,
     ) -> None:
         self.uow = uow
-        self.code_repo = code_repo
+        self.registration_repo = registration_repo
         self.token_service = token_service
         self.get_now = get_now
-        self.session_expires_delta = session_expires_delta
+        self.id_generator = id_generator
+        self.policy = policy
 
-    async def execute(self, dto: dtos.ConfirmRegisterDTO) -> dtos.AuthTokensDTO:
-        timestamp = self.get_now()
-        employee_id = await self._ensure_confirmation_code_valid(dto)
-        auth_session = AuthSession.create(
-            employee_id=employee_id,
-            refresh_token=self.token_service.create_refresh_token(
-                employee_id=employee_id,
-            ),
-            expires_delta=self.session_expires_delta,
-            timestamp=timestamp,
+    async def execute(self, *, dto: dtos.ConfirmRegisterDTO) -> dtos.AuthTokensDTO:
+        now = self.get_now()
+        registration = await self.registration_repo.find_by_email(email=dto.email)
+        if not registration:
+            raise excs.RegistrationNotFound
+
+        registration.confirm(
+            code=dto.confirmation_code,
+            now=now,
         )
-        async with self.uow as db:
-            await db.auth_sessions.save(auth_session)
+        employee_id = self.id_generator()
+        employee = Employee.create(
+            employee_id=employee_id,
+            email=registration.email,
+            password_hash=registration.password_hash,
+            role=self.policy.get_default_role(),
+            now=now,
+        )
+        session_id = self.id_generator()
+        session_expires_at = self.policy.get_refresh_session_expires_at(now=now)
+        refresh_token = self.token_service.create_refresh_token(
+            employee_id=employee_id,
+            session_id=session_id,
+            expires_at=session_expires_at,
+        )
+        refresh_token_hash = self.token_service.hash_refresh_token(
+            refresh_token=refresh_token
+        )
+        auth_session = AuthSession.create(
+            session_id=session_id,
+            employee_id=employee_id,
+            user_agent=registration.user_agent,
+            ip_address=registration.ip_address,
+            refresh_token_hash=refresh_token_hash,
+            expires_at=session_expires_at,
+            now=now,
+        )
+        async with self.uow as uow:
+            await uow.employees.add(employee=employee)
+            await uow.auth_sessions.save(auth_session=auth_session)
+            await self.registration_repo.delete_by_email(email=registration.email)
+            await uow.commit(
+                events=registration.pull_events()
+                + employee.pull_events()
+                + auth_session.pull_events()
+            )
 
-        access_token = self.token_service.create_access_token(employee_id=employee_id)
+        access_token = self.token_service.create_access_token(
+            employee_id=employee_id,
+            expires_at=self.policy.get_access_expires_at(now=now),
+        )
         return dtos.AuthTokensDTO(
             access_token=access_token,
-            refresh_token=auth_session.refresh_token,
-            device_id=auth_session.device_id,
+            refresh_token=refresh_token,
         )
-
-    async def _ensure_confirmation_code_valid(
-        self,
-        dto: dtos.ConfirmRegisterDTO,
-    ) -> UUID:
-        confirmation = await self.code_repo.get_by_email(dto.email)
-        if not confirmation:
-            raise excs.ConfirmationCodeNotFoundException
-
-        if confirmation.code != dto.confirmation_code:
-            raise excs.InvalidConfirmationCodeException
-
-        return confirmation.employee_id
 
 
 class Login:
     def __init__(
         self,
+        *,
         token_service: services_abc.ITokenService,
         uow: uow_abc.IEmployeeUOW,
         password_service: services_abc.IPasswordService,
-        logger: services_abc.ILogger,
         get_now: Callable[[], Timestamp],
-        session_expires_delta: Timedelta,
+        id_generator: Callable[[], UUID],
+        policy: IRegistrationPolicy,
     ):
         self.uow = uow
         self.token_service = token_service
         self.password_service = password_service
-        self.logger = logger
         self.get_now = get_now
-        self.session_expires_delta = session_expires_delta
+        self.id_generator = id_generator
+        self.policy = policy
 
     async def execute(
-        self, dto: dtos.LoginCredentialsEmployeeDTO
-    ) -> dtos.AuthTokensDTO:
-        timestamp = self.get_now()
-        async with self.uow as db:
-            employee = await db.employees.get_by_email(dto.email)
-            if not employee:
-                raise excs.InvalidCredentialsEmployeeException
-
-            employee.check_password(
-                password=dto.password,
-                password_service=self.password_service,
-            )
-            if dto.device_id:
-                auth_session = await db.auth_sessions.get_by_device_and_employee_id(
-                    employee_id=employee.id,
-                    device_id=dto.device_id,
-                )
-                if not auth_session:
-                    auth_session = self._create_auth_session(
-                        employee_id=employee.id,
-                        timestamp=timestamp,
-                        device_id=dto.device_id,
-                    )
-            else:
-                auth_session = self._create_auth_session(
-                    employee_id=employee.id,
-                    timestamp=timestamp,
-                )
-
-            self._update_refresh_token(auth_session)
-            await db.auth_sessions.save(auth_session)
-            await db.commit(events=auth_session.pull_events())
-
-            return dtos.AuthTokensDTO(
-                access_token=self.token_service.create_access_token(
-                    employee_id=employee.id
-                ),
-                refresh_token=auth_session.refresh_token,
-                device_id=auth_session.device_id,
-            )
-
-    def _create_auth_session(
         self,
         *,
-        timestamp: Timestamp,
-        employee_id: UUID,
-        device_id: UUID | None = None,
-    ) -> AuthSession:
-        return AuthSession.create(
-            employee_id=employee_id,
-            expires_delta=self.session_expires_delta,
-            device_id=device_id,
-            timestamp=timestamp,
+        dto: dtos.CredentialsEmployeeDTO,
+    ) -> dtos.AuthTokensDTO:
+        now = self.get_now()
+        async with self.uow as uow:
+            employee = await uow.employees.find_by_email(email=dto.email)
+            if not employee or not self.password_service.verify_password(
+                plain_password=dto.password,
+                hashed_password=employee.password_hash,
+            ):
+                raise excs.InvalidCredentialsEmployeeException
+
+            session_id = self.id_generator()
+            session_expires_at = self.policy.get_refresh_session_expires_at(now=now)
+            refresh_token = self.token_service.create_refresh_token(
+                employee_id=employee.id,
+                session_id=session_id,
+                expires_at=session_expires_at,
+            )
+            refresh_token_hash = self.token_service.hash_refresh_token(
+                refresh_token=refresh_token,
+            )
+            auth_session = AuthSession.create(
+                session_id=session_id,
+                employee_id=employee.id,
+                user_agent=dto.user_agent,
+                ip_address=dto.ip_address,
+                refresh_token_hash=refresh_token_hash,
+                expires_at=session_expires_at,
+                now=now,
+            )
+
+            await uow.auth_sessions.save(auth_session=auth_session)
+            await uow.commit(events=auth_session.pull_events())
+
+            access_token = self.token_service.create_access_token(
+                employee_id=employee.id,
+                expires_at=self.policy.get_access_expires_at(now=now),
+            )
+            return dtos.AuthTokensDTO(
+                access_token=access_token,
+                refresh_token=refresh_token,
+            )
+
+
+class Refresh:
+    def __init__(
+        self,
+        *,
+        uow: uow_abc.IEmployeeUOW,
+        token_service: services_abc.ITokenService,
+        policy: IRegistrationPolicy,
+        get_now: Callable[[], Timestamp],
+    ) -> None:
+        self.uow = uow
+        self.token_service = token_service
+        self.policy = policy
+        self.get_now = get_now
+
+    async def execute(
+        self,
+        *,
+        dto: dtos.RefreshDTO,
+    ) -> dtos.AuthTokensDTO:
+        now = self.get_now()
+        payload = self.token_service.get_payload_refresh_token(
+            refresh_token=dto.refresh_token.value
+        )
+        async with self.uow as uow:
+            auth_session = await uow.auth_sessions.get(
+                auth_session_id=payload.auth_session_id,
+                employee_id=payload.employee_id,
+            )
+            if not self.token_service.verify_hash_refresh_token(
+                plain_token=dto.refresh_token.value,
+                hashed_token=auth_session.refresh_token_hash,
+            ):
+                auth_session.flag_theft_attempt(
+                    now=now,
+                    requested_by=payload.employee_id,
+                )
+                await uow.auth_sessions.delete(auth_session=auth_session)
+                await uow.commit(events=auth_session.pull_events())
+                raise excs.InvalidRefreshTokenException
+
+            session_expires_at = self.policy.get_refresh_session_expires_at(now=now)
+            refresh_token = self.token_service.create_refresh_token(
+                employee_id=auth_session.employee_id,
+                session_id=auth_session.id,
+                expires_at=session_expires_at,
+            )
+            new_hash = self.token_service.hash_refresh_token(
+                refresh_token=refresh_token
+            )
+            auth_session.rotate(
+                requested_by=payload.employee_id,
+                new_hash=new_hash,
+                expires_at=session_expires_at,
+                now=now,
+            )
+            await uow.auth_sessions.save(auth_session=auth_session)
+            await uow.commit(events=auth_session.pull_events())
+
+        access_token = self.token_service.create_access_token(
+            employee_id=auth_session.employee_id,
+            expires_at=self.policy.get_access_expires_at(now=now),
+        )
+        return dtos.AuthTokensDTO(
+            access_token=access_token,
+            refresh_token=refresh_token,
         )
 
-    def _update_refresh_token(self, auth_session: AuthSession) -> None:
-        auth_session.save_refresh_token(
-            refresh_token=self.token_service.create_refresh_token(
-                auth_session_id=auth_session.id,
-            )
+
+class Logout:
+    def __init__(
+        self,
+        *,
+        uow: uow_abc.IEmployeeUOW,
+        token_service: services_abc.ITokenService,
+        get_now: Callable[[], Timestamp],
+    ) -> None:
+        self.uow = uow
+        self.token_service = token_service
+        self.get_now = get_now
+
+    async def execute(
+        self,
+        *,
+        dto: dtos.LogoutDTO,
+    ) -> None:
+        now = self.get_now()
+        payload = self.token_service.get_payload_refresh_token(
+            refresh_token=dto.refresh_token.value
         )
+        async with self.uow as uow:
+            auth_session = await uow.auth_sessions.get(
+                auth_session_id=payload.auth_session_id,
+                employee_id=payload.employee_id,
+            )
+            auth_session.close(
+                now=now,
+                requested_by=payload.employee_id,
+            )
+            await uow.auth_sessions.delete(auth_session=auth_session)
+            await uow.commit(events=auth_session.pull_events())

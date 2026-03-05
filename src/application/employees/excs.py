@@ -56,3 +56,8 @@ class CooldownNotExpired(BaseAppException):
 @dataclass(frozen=True, slots=True)
 class TooLateToResend(BaseAppException):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class InvalidRefreshTokenException(BaseAppException):
+    pass
