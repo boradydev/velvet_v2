@@ -37,6 +37,27 @@ class UserAgent:
 
 
 @dataclass(frozen=True, slots=True)
+class RefreshToken:
+    """
+    Представляет собой сырой Refresh-токен (JWT).
+
+    Гарантирует, что токен не пуст, обрезан от пробелов
+    и имеет структуру JWT (три части, разделенные точками).
+    """
+
+    value: str = field(repr=False)
+
+    _MAX_LENGTH: ClassVar[Final[int]] = 1024
+    _PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(
+        r"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$"
+    )
+
+    def __post_init__(self) -> None:
+        if len(self.value) > self._MAX_LENGTH or not self._PATTERN.match(self.value):
+            raise excs.InvalidRefreshTokenStructureException
+
+
+@dataclass(frozen=True, slots=True)
 class RefreshTokenHash:
     """
     Хранимый хэш Refresh-токена.
