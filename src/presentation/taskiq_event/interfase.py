@@ -7,6 +7,7 @@ class IEventConsumer(ABC):
     @abstractmethod
     async def listen(
         self,
+        *,
         routing_keys: list[str],
         handler: Callable[[dict[str, Any]], Awaitable[None]],
     ) -> None:
