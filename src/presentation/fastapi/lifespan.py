@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
         url=settings.event_publisher.AMQP_URL,
         exchange_name=settings.event_publisher.EVENT_BROKER_EXCHANGE,
     )
-    interactor_resources = UseCaseResources(
+    use_case_resources = UseCaseResources(
         session_factory=postgres.session_factory,
         token_service=JwtTokensService(settings.jwt),
         password_service=PasswordService(settings.password.DEFAULT_CONTEXT),
@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
         event_publisher=event_publisher,
     )
     app.state.lifespan_state = LifespanState(
-        cases=interactor_resources,
+        cases=use_case_resources,
         tasks_broker=tasks_broker,
     )
     yield

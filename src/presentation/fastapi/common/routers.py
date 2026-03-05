@@ -11,5 +11,4 @@ public.include_router(employees_public_router)
 
 protected = APIRouter(
     prefix="/protected",
-    # dependencies=[Depends(verify_access_token)],
 )

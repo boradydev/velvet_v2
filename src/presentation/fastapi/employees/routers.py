@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 
 from src.presentation.fastapi.common.schemas import NullDataResponse
-from src.presentation.fastapi.employees import controller
+from src.presentation.fastapi.employees import controllers
 from src.presentation.fastapi.employees.docs.registry import docs_registry
 
 
@@ -16,7 +16,7 @@ employees_public_router.post(
     description=docs_registry.get(filename="docs/register.md"),
     response_model=NullDataResponse,
     responses={},
-)(controller.register_employee)
+)(controllers.register_employee)
 
 
 employees_public_router.post(
@@ -25,4 +25,4 @@ employees_public_router.post(
     description=docs_registry.get(filename="docs/resend.md"),
     response_model=NullDataResponse,
     responses={},
-)(controller.resend_confirmation_code)
+)(controllers.resend_confirmation_code)

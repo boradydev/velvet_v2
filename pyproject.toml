@@ -7,16 +7,16 @@ convention = "google"
 
 [tool.ruff.lint]
 select = [
-    "E",      # Ошибки стиля (pycodestyle)
-    "W",      # Предупреждения стиля (pycodestyle)
-    "F",      # Ошибки логики (Pyflakes)
-    "I",      # Автоматическая сортировка импортов (isort)
-    "UP",     # Обновление синтаксиса до новых версий Python
-    "B",      # Нахождение вероятных багов (flake8-bugbear)
-    "PT",     # Оптимизация тестов Pytest
-    "ARG",    # Поиск неиспользуемых аргументов функций
-    "D", # Включаем проверку документации (pydocstyle)
-    "D213", # Явно приказываем: текст СО ВТОРОЙ строки
+    "E",
+    "W",
+    "F",
+    "I",
+    "UP",
+    "B",
+    "PT",
+    "ARG",
+    "D",
+    "D213",
 ]
 
 ignore = [
@@ -48,8 +48,8 @@ lines-after-imports = 2
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
-skip-magic-trailing-comma = false # Важно: Ruff будет сохранять ваши запятые для переносов
-docstring-code-format = true      # Форматирует примеры кода в докстрингах
+skip-magic-trailing-comma = false
+docstring-code-format = true
 
 [tool.poetry]
 name = "velvet-v2"
