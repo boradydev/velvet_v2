@@ -35,7 +35,7 @@ class EmployeeUseCaseFactory:
         """Создает сценарий регистрации нового сотрудника."""
         uow = EmployeeUOW(
             session_factory=self.resources.session_factory,
-            employee_repo_class=EmployeeRepository,
+            employee_class=EmployeeRepository,
             event_publisher=self.resources.event_publisher,
         )
 
@@ -49,7 +49,7 @@ class EmployeeUseCaseFactory:
         """Создает сценарий аутентификации сотрудника."""
         uow = EmployeeUOW(
             session_factory=self.resources.session_factory,
-            employee_repo_class=EmployeeRepository,
+            employee_class=EmployeeRepository,
             event_publisher=self.resources.event_publisher,
         )
         return cases.Login(

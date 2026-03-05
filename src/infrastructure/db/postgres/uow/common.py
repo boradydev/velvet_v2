@@ -49,7 +49,7 @@ class IPostgresUOW(ABC):
     async def commit(self, events: list[BaseDomainEvent]) -> None:
         """Фиксирует все изменения текущей транзакции в хранилище."""
         await self._session.commit()
-        await self._event_publisher.publish_many(events)
+        await self._event_publisher.publish_many(events=events)
 
     async def rollback(self) -> None:
         """Отменяет все незафиксированные изменения в текущей транзакции."""
