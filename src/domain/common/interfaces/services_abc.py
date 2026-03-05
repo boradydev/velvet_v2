@@ -53,7 +53,7 @@ class IEmailService(Protocol):
         *,
         dto: dtos.SendConfirmationCodeDTO,
     ) -> None:
-        """Отправляет сообщение."""
+        """Отправляет код подтверждения регистрации на почту."""
 
 
 class ITokenService(ABC):

@@ -1,15 +1,31 @@
 from dataclasses import dataclass, field
 
-from uuid6 import UUID
-
 from src.domain.common.events import BaseDomainEvent
 
 
 @dataclass
 class BaseEntity:
-    id: UUID
+    """
+    Базовая доменная сущность.
+
+    Attributes:
+        _events (List[BaseDomainEvent]): Список накопленных доменных событий.
+            Используемые параметры field:
+                ``init=False``: Поле исключено из __init__, так как события
+                    генерируются внутри методов сущности, а не передаются извне
+                ``repr=False``: Поле исключено из строкового представления (repr),
+                    чтобы не засорять логи техническими деталями событий
+                ``compare=False``: Поле не участвует в сравнении объектов (==), так как
+                    наличие или отсутствие событий не меняет идентичность сущности
+                ``default_factory=list``: Гарантирует создание нового пустого списка
+                    для каждого экземпляра, избегая проблемы разделяемого состояния
+    """
+
     _events: list[BaseDomainEvent] = field(
-        init=False, repr=False, compare=False, default_factory=list
+        init=False,
+        repr=False,
+        compare=False,
+        default_factory=list,
     )
 
     def _add_event(self, event: BaseDomainEvent) -> None:
@@ -21,9 +37,3 @@ class BaseEntity:
         events = self._events.copy()
         self._events.clear()
         return events
-
-    def __eq__(self, other) -> bool:
-        """Сравнение сущностей по id."""
-        if not isinstance(other, type(self)):
-            return False
-        return self.id == other.id

@@ -7,4 +7,4 @@ from src.core.timezone import Timestamp
 class BaseDomainEvent:
     """Базовый класс для всех событий домена."""
 
-    timestamp: Timestamp
+    created_at: Timestamp
