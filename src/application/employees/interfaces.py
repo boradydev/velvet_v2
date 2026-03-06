@@ -22,6 +22,10 @@ class IEmployeeUseCaseFactory(Protocol):
 
     def create_resend_case(self) -> cases.ReSendCodeConfirmation: ...
 
+    def create_logout_case(self) -> cases.Logout: ...
+
+    def create_refresh_case(self) -> cases.Refresh: ...
+
 
 class IEmployeeUseCaseResources(Protocol):
     """Контракт ресурсов (БД, сервисы) для сборки интеракторов (Employees)."""

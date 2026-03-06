@@ -5,7 +5,7 @@ from fastapi import Request, Response
 
 from src.infrastructure.auth.jwt.settings import JwtSettings
 from src.infrastructure.web.fastapi.excs import CookieNotFound
-from src.presentation.fastapi.employees.interfaces.cookie import IAuthCookieManager
+from src.presentation.fastapi.employees.interfaces.cookies import IAuthCookieManager
 
 
 class IFastapiCookieManager(ABC):
@@ -31,6 +31,9 @@ class IFastapiCookieManager(ABC):
 
 
 class AuthCookieManager(IFastapiCookieManager, IAuthCookieManager):
+    _ACCESS_TOKEN = "access_token"
+    _REFRESH_TOKEN = "refresh_token"
+
     def __init__(
         self,
         request: Request,
@@ -54,19 +57,19 @@ class AuthCookieManager(IFastapiCookieManager, IAuthCookieManager):
         refresh_token: str,
     ) -> None:
         self._set(
-            key="access_token",
+            key=self._ACCESS_TOKEN,
             value=access_token,
             max_age=self.settings.ACCESS_TOKEN_EXPIRE_SECONDS,
         )
         self._set(
-            key="refresh_token",
+            key=self._REFRESH_TOKEN,
             value=refresh_token,
             max_age=self.settings.REFRESH_TOKEN_EXPIRE_SECONDS,
         )
 
     def delete_auth_cookies(self) -> None:
-        self._response.delete_cookie(key="access_token")
-        self._response.delete_cookie(key="refresh_token")
+        self._response.delete_cookie(key=self._ACCESS_TOKEN)
+        self._response.delete_cookie(key=self._REFRESH_TOKEN)
 
     def _get(self, key: str) -> str:
         cookie = self._request.cookies.get(key)
@@ -76,12 +79,8 @@ class AuthCookieManager(IFastapiCookieManager, IAuthCookieManager):
 
     @property
     def access_token(self) -> str:
-        return self._get("access_token")
+        return self._get(self._ACCESS_TOKEN)
 
     @property
     def refresh_token(self) -> str:
-        return self._get("refresh_token")
-
-    @property
-    def user_agent(self) -> str:
-        return self._get("user_agent")
+        return self._get(self._REFRESH_TOKEN)

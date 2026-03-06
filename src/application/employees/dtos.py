@@ -11,13 +11,15 @@ class CredentialsEmployeeDTO:
     email: vals.Email
     password: vals.Password
     user_agent: UserAgent
-    ip_address: IpAddress | None = None
+    ip_address: IpAddress
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ConfirmRegisterDTO:
     email: vals.Email
     confirmation_code: vals.ConfirmationCode
+    user_agent: UserAgent
+    ip_address: IpAddress
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -41,6 +43,7 @@ class SendConfirmationCodeDTO:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResendConfirmationCodeDTO:
     email: vals.Email
+    ip_address: IpAddress
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -53,7 +56,7 @@ class AuthTokensDTO:
 class RefreshDTO:
     refresh_token: RefreshToken
     user_agent: UserAgent
-    ip_address: IpAddress | None = None
+    ip_address: IpAddress
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

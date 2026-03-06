@@ -24,8 +24,3 @@ class IAuthCookieManager(ABC):
     @abstractmethod
     def refresh_token(self) -> str:
         raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def user_agent(self) -> str:
-        raise NotImplementedError
