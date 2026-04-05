@@ -51,3 +51,13 @@ class RegistrationExpired(DomainException):
 @dataclass(frozen=True, slots=True)
 class InvalidConfirmationCode(DomainException):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class InvalidPermissionNameException(DomainException):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class RoleNotFoundException(DomainException):
+    pass

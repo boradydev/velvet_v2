@@ -1,6 +1,5 @@
 import re
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import ClassVar, Final
 
 from src.domain.employees import excs
@@ -139,24 +138,48 @@ class RoleName:
         return self.value
 
 
-class SystemRoles(Enum):
-    OWNER = RoleName("owner")
-    ADMIN = RoleName("admin")
-    MANAGER = RoleName("manager")
-    SELLER = RoleName("seller")
+@dataclass(frozen=True, slots=True)
+class PermissionName(RoleName):
+    """
+    Нормализует строку, обрезает пробелы и приводит в нижний регистр.
+
+    Разрешает: латиницу, цифры и нижнее подчеркивание.
+    Не разрешает: пробелы, спецсимволы, пустые строки.
+
+    ``^[a-z]`` - начинается строго с маленькой латинской буквы
+
+    ``[a-z0-9_]*`` - далее любые латинские буквы, цифры или подчеркивание
+
+    ``{2,19}`` - от 3 до 20 символов
+
+    ``$`` - до конца строки
+
+    Список разрешений:
+        "view_products",
+        "edit_products",
+        "goods_receipt",
+        "revaluation",
+        "write_off",
+        "sale",
+        "sale_return",
+        "supplier_return",
+        "manage_roles",
+    """
+
+    value: str
+
+    _MIN_LEN: ClassVar[Final[int]] = 3
+    _MAX_LEN: ClassVar[Final[int]] = 20
+    _PATTERN: ClassVar[Final[re.Pattern[str]]] = re.compile(r"^[a-z][a-z0-9_]{2,19}$")
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "value", self.value.strip().lower())
+        has_len_range = self._MIN_LEN <= len(self.value) <= self._MAX_LEN
+        has_pattern = self._PATTERN.match(self.value)
+        if not has_len_range or not has_pattern:
+            raise excs.InvalidPermissionNameException
+
+    def __str__(self) -> str:
+        return self.value
 
 
-class Permission(str, Enum):
-    VIEW_PRODUCTS = "view_products"
-    EDIT_PRODUCTS = "edit_products"
-
-    GOODS_RECEIPT = "goods_receipt"
-    REVALUATION = "revaluation"
-    WRITE_OFF = "write_off"
-
-    SALE = "sale"
-    SALE_RETURN = "sale_return"
-
-    SUPPLIER_RETURN = "supplier_return"
-
-    MANAGE_ROLES = "manage_roles"

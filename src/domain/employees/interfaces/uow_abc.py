@@ -18,3 +18,9 @@ class IEmployeeUOW(InterfaceUOW, ABC):
     def auth_sessions(self) -> db_abc.IAuthSessionsRepository:
         """Требует репозиторий для сессий аутентификации."""
         raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def roles(self) -> db_abc.IRolesRepository:
+        """Требует репозиторий для сессий аутентификации."""
+        raise NotImplementedError
