@@ -1,5 +1,5 @@
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 
-class BaseModel(DeclarativeBase):
+class BaseModel(MappedAsDataclass, DeclarativeBase):
     __abstract__ = True
