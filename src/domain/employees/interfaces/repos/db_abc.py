@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from uuid6 import UUID
 
 from src.domain.auth_sessions.entity import AuthSession
-from src.domain.employees.entities import Employee
-from src.domain.employees.vals import Email
+from src.domain.employees.entities import Employee, Role
+from src.domain.employees.vals import Email, RoleName
 
 
 class IEmployeeRepository(ABC):
@@ -26,23 +26,28 @@ class IEmployeeRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, *, employee_id: UUID) -> Employee | None:
+    async def update(self, *, employee: Employee) -> None:
+        """Обновляет сотрудника в систему."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_for_update_by_id(self, *, employee_id: UUID) -> Employee:
+        """
+        Использует пессимистичную блокировку.
+
+        Raises:
+            EmployeeNotFoundException: Если ID не существует.
+        """
         raise NotImplementedError
 
     @abstractmethod
     async def exists_by_email(self, *, email: Email) -> bool:
+        """Проверяет существование сотрудника по email."""
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_by_id(self, *, employee_id: UUID) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_id_by_email(self, *, email: Email) -> UUID | None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def find_by_email(self, *, email) -> Employee | None:
+    async def find_by_email(self, *, email: Email) -> Employee | None:
+        """Поиск сотрудника по email."""
         raise NotImplementedError
 
 
@@ -81,4 +86,18 @@ class IAuthSessionsRepository(ABC):
         employee_id: UUID,
     ) -> AuthSession | None:
         """Использует пессимистичную блокировку."""
+        raise NotImplementedError
+
+
+class IRolesRepository(ABC):
+    """Интерфейс репозитория для управления ролями сотрудника."""
+
+    @abstractmethod
+    async def get_by_name(self, *, role_name: RoleName) -> Role:
+        """
+        Получить роль по имени.
+
+        Raises:
+            RoleNotFoundException
+        """
         raise NotImplementedError
