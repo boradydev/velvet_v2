@@ -9,8 +9,11 @@ from src.domain.auth_sessions.entity import AuthSession
 from src.domain.common.interfaces import services_abc
 from src.domain.employees.entities import Employee, Registration
 from src.domain.employees.interfaces import uow_abc
+from src.domain.employees.interfaces.policies import (
+    IAuthorizationPolicy,
+    IRegistrationPolicy,
+)
 from src.domain.employees.interfaces.repos.cache_abc import IRegistrationRepository
-from src.domain.employees.policies import IRegistrationPolicy
 
 
 class Register:
@@ -123,14 +126,16 @@ class ConfirmRegister:
         token_service: services_abc.ITokenService,
         get_now: Callable[[], Timestamp],
         id_generator: Callable[[], UUID],
-        policy: IRegistrationPolicy,
+        reg_policy: IRegistrationPolicy,
+        auth_policy: IAuthorizationPolicy,
     ) -> None:
         self.uow = uow
         self.registration_repo = registration_repo
         self.token_service = token_service
         self.get_now = get_now
         self.id_generator = id_generator
-        self.policy = policy
+        self.reg_policy = reg_policy
+        self.auth_policy = auth_policy
 
     async def execute(self, *, dto: dtos.ConfirmRegisterDTO) -> dtos.AuthTokensDTO:
         now = self.get_now()
@@ -142,34 +147,37 @@ class ConfirmRegister:
             code=dto.confirmation_code,
             now=now,
         )
-        employee_id = self.id_generator()
-        employee = Employee.create(
-            employee_id=employee_id,
-            email=registration.email,
-            password_hash=registration.password_hash,
-            role=self.policy.get_default_role(),
-            now=now,
-        )
-        session_id = self.id_generator()
-        session_expires_at = self.policy.get_refresh_session_expires_at(now=now)
-        refresh_token = self.token_service.create_refresh_token(
-            employee_id=employee_id,
-            session_id=session_id,
-            expires_at=session_expires_at,
-        )
-        refresh_token_hash = self.token_service.hash_refresh_token(
-            refresh_token=refresh_token
-        )
-        auth_session = AuthSession.create(
-            session_id=session_id,
-            employee_id=employee_id,
-            user_agent=registration.user_agent,
-            ip_address=registration.ip_address,
-            refresh_token_hash=refresh_token_hash,
-            expires_at=session_expires_at,
-            now=now,
-        )
         async with self.uow as uow:
+            role = await uow.roles.get_by_name(
+                role_name=self.auth_policy.get_default_role()
+            )
+            employee_id = self.id_generator()
+            employee = Employee.create(
+                employee_id=employee_id,
+                email=registration.email,
+                password_hash=registration.password_hash,
+                role_id=role.id,
+                now=now,
+            )
+            session_id = self.id_generator()
+            session_expires_at = self.reg_policy.get_refresh_session_expires_at(now=now)
+            refresh_token = self.token_service.create_refresh_token(
+                employee_id=employee_id,
+                session_id=session_id,
+                expires_at=session_expires_at,
+            )
+            refresh_token_hash = self.token_service.hash_refresh_token(
+                refresh_token=refresh_token
+            )
+            auth_session = AuthSession.create(
+                session_id=session_id,
+                employee_id=employee_id,
+                user_agent=registration.user_agent,
+                ip_address=registration.ip_address,
+                refresh_token_hash=refresh_token_hash,
+                expires_at=session_expires_at,
+                now=now,
+            )
             await uow.employees.add(employee=employee)
             await uow.auth_sessions.save(auth_session=auth_session)
             await self.registration_repo.delete_by_email(email=registration.email)
@@ -181,7 +189,7 @@ class ConfirmRegister:
 
         access_token = self.token_service.create_access_token(
             employee_id=employee_id,
-            expires_at=self.policy.get_access_expires_at(now=now),
+            expires_at=self.reg_policy.get_access_expires_at(now=now),
         )
         return dtos.AuthTokensDTO(
             access_token=access_token,

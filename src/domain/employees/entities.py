@@ -2,13 +2,12 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Self
 
-from uuid6 import UUID
+from uuid6 import UUID, uuid7
 
 from src.core.timezone import Timedelta, Timestamp
 from src.domain.auth_sessions.vals import IpAddress, UserAgent
 from src.domain.common.entities import BaseEntity
 from src.domain.employees import events, excs, vals
-from src.domain.employees.excs import PermissionDeniedException
 
 
 @dataclass(slots=True, kw_only=True)
@@ -116,14 +115,44 @@ class Registration(BaseEntity):
 
 
 @dataclass(slots=True, kw_only=True)
+class Role(BaseEntity):
+    id: UUID
+    name: vals.RoleName
+    is_system: bool
+    _permissions: set[vals.PermissionName]
+
+    @property
+    def permissions(self) -> set[vals.PermissionName]:
+        return self._permissions
+
+    def add_permission(self, *, permission: vals.PermissionName) -> None:
+        self._permissions.add(permission)
+
+    def remove_permission(self, *, permission: vals.PermissionName) -> None:
+        self._permissions.remove(permission)
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        name: vals.RoleName,
+    ) -> Self:
+        return cls(
+            id=uuid7(),
+            name=name,
+            _permissions=set(),
+            is_system=False,
+        )
+
+
+@dataclass(slots=True, kw_only=True)
 class Employee(BaseEntity):
     id: UUID
     email: vals.Email
     _password_hash: vals.PasswordHash
     is_active: bool
-    has_roles: set[vals.RoleName]
-    available_roles: set[vals.RoleName]
-    permissions: set[vals.Permission]
+    _roles_ids: set[UUID]
+    _permission_names: set[vals.PermissionName]
     created_at: Timestamp
 
     def deactivate(self):
@@ -134,24 +163,15 @@ class Employee(BaseEntity):
         return self._password_hash
 
     @property
-    def is_owner(self) -> bool:
-        return vals.SystemRoles.OWNER.value in self.has_roles
+    def roles_ids(self) -> frozenset[UUID]:
+        return frozenset(self._roles_ids)
 
-    def add_role(self, *, role: vals.RoleName) -> None:
-        if not (self.is_owner or vals.Permission.MANAGE_ROLES in self.permissions):
-            raise PermissionDeniedException
-        self.available_roles.add(role)
+    @property
+    def permission_names(self) -> frozenset[vals.PermissionName]:
+        return frozenset(self._permission_names)
 
-    def has_permission(self, *, permission: vals.Permission) -> bool:
-        if self.is_owner:
-            return True
-        return permission in self.permissions
-
-    def _ensure_can_perform(self, *, permission: vals.Permission):
-        if self.is_owner:
-            return
-        if permission not in self.permissions:
-            raise PermissionDeniedException
+    def add_role(self, *, role_id: UUID) -> None:
+        self._roles_ids.add(role_id)
 
     @classmethod
     def create(
@@ -159,7 +179,7 @@ class Employee(BaseEntity):
         employee_id: UUID,
         email: vals.Email,
         password_hash: vals.PasswordHash,
-        role: vals.RoleName,
+        role_id: UUID,
         now: Timestamp,
     ) -> Self:
         employee = cls(
@@ -167,9 +187,8 @@ class Employee(BaseEntity):
             email=email,
             _password_hash=password_hash,
             is_active=True,
-            has_roles={role},
-            available_roles=set(),
-            permissions=set(),
+            _roles_ids={role_id},
+            _permission_names=set(),
             created_at=now,
         )
         employee._add_event(
