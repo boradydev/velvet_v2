@@ -14,7 +14,7 @@ from src.domain.employees.entities import Registration
 from src.domain.employees.interfaces.repos import db_abc
 from src.domain.employees.interfaces.repos.cache_abc import IRegistrationRepository
 from src.domain.employees.interfaces.uow_abc import IEmployeeUOW
-from src.domain.employees.policies import IRegistrationPolicy
+from src.domain.employees.interfaces.policies import IRegistrationPolicy
 from src.domain.employees.vals import ConfirmationCode, Email, Password, PasswordHash
 
 
@@ -72,7 +72,7 @@ def use_case_confirm_register(
         token_service=mock_token_service,
         get_now=mock_now,
         id_generator=mock_id_generator,
-        policy=mock_registration_policy,
+        auth_policy=mock_registration_policy,
     )
 
 
